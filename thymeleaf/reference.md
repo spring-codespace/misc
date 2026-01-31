@@ -19,8 +19,9 @@
    - 2.1 [Maven Dependency](#21-maven-dependency)
    - 2.2 [Gradle Dependency](#22-gradle-dependency)
    - 2.3 [Default Configuration](#23-default-configuration)
-   - 2.4 [Basic Controller](#24-basic-controller)
-   - 2.5 [Basic Template](#25-basic-template)
+   - 2.4 [Advanced Configuration & Customization](#24-advanced-configuration--customization)
+   - 2.5 [Basic Controller](#25-basic-controller)
+   - 2.6 [Basic Template](#26-basic-template)
 3. [Thymeleaf Syntax & Expressions](#3-thymeleaf-syntax--expressions)
    - 3.1 [Expression Types Overview](#31-expression-types-overview)
    - 3.2 [Variable Expressions](#32-variable-expressions-)
@@ -90,15 +91,27 @@
     - 14.4 [@SessionAttributes](#144-sessionattributes)
     - 14.5 [Static Resources](#145-static-resources)
 15. [Advanced Topics](#15-advanced-topics)
-    - 15.1 [Preprocessing with th:pre](#151-preprocessing-with-thpre)
-    - 15.2 [th:classappend & th:styleappend](#152-thclassappend--thstyleappend)
-    - 15.3 [Literal Substitution](#153-literal-substitution)
-    - 15.4 [Conditional Attributes — th:attrappend](#154-conditional-attributes--thattrappend)
-    - 15.5 [Decoupled Template Logic](#155-decoupled-template-logic-structured-data-files)
+    - 15.1 [Thymeleaf Configuration Extensions](#151-thymeleaf-configuration-extensions)
+    - 15.2 [Testing Thymeleaf Templates](#152-testing-thymeleaf-templates)
+    - 15.3 [Thymeleaf and WebJars Integration](#153-thymeleaf-and-webjars-integration)
+    - 15.4 [Thymeleaf for Email Templates](#154-thymeleaf-for-email-templates)
+    - 15.5 [Conditional Comments for Legacy Browsers](#155-conditional-comments-for-legacy-browsers)
+    - 15.6 [Preprocessing with th:pre](#156-preprocessing-with-thpre)
+    - 15.7 [th:classappend & th:styleappend](#157-thclassappend--thstyleappend)
+    - 15.8 [Literal Substitution](#158-literal-substitution)
+    - 15.9 [Conditional Attributes — th:attrappend](#159-conditional-attributes--thattrappend)
+    - 15.10 [Decoupled Template Logic](#1510-decoupled-template-logic-structured-data-files)
+    - 15.11 [Performance Considerations](#1511-performance-considerations)
+    - 15.12 [Error Handling & Fallbacks](#1512-error-handling--fallbacks)
+    - 15.13 [Accessibility Considerations](#1513-accessibility-considerations)
+    - 15.14 [Common Pitfalls & Debugging](#1514-common-pitfalls--debugging)
 16. [Quick Reference Card](#16-quick-reference-card)
     - 16.1 [Most Common Processors](#161-most-common-processors)
     - 16.2 [Expression Cheat Sheet](#162-expression-cheat-sheet)
     - 16.3 [Spring Security sec: Attributes](#163-spring-security-sec-attributes)
+17. [Glossary](#17-glossary)
+18. [Best Practices](#18-best-practices)
+19. [Troubleshooting FAQ](#19-troubleshooting-faq)
 
 ---
 
@@ -110,19 +123,20 @@ Thymeleaf is a modern, server-side Java template engine designed to produce well
 
 - **Natural Templating** — HTML files are valid and can be opened directly in a browser, making design and development seamless.
 - **Spring MVC Integration** — First-class support for Spring MVC, including binding, validation, and security.
-- **Standard Dialects** — A rich set of built-in processors (`th:text`, `th:each`, `th:if`, etc.) that cover the vast majority of use cases.
+- **Standard Dialect** — A rich set of built-in processors (`th:text`, `th:each`, `th:if`, etc.) that cover the vast majority of use cases.
 - **Extensibility** — Custom dialects can be written to extend Thymeleaf with domain-specific processors.
 - Supports HTML5, XML, XHTML, XHTML5, Legacy HTML5, and plain text output modes.
 
 ### 1.2 Thymeleaf vs. JSP
 
-| Feature | Description |
-|---|---|
-| **Natural HTML** | Thymeleaf templates are valid HTML; JSPs are not renderable without a container. |
-| **No Compilation** | Thymeleaf does not require compilation. JSPs are compiled to servlets. |
-| **XML/HTML Validity** | Thymeleaf enforces well-formed templates by default. JSPs allow loose syntax. |
-| **Spring Boot** | Thymeleaf is the default and recommended view for Spring Boot. JSP support is limited. |
-| **Prototyping** | Designers can work on Thymeleaf templates as static HTML directly. |
+| Feature | Thymeleaf | JSP |
+|---|---|---|
+| **Natural HTML** | Templates are valid HTML; renderable in browsers | Not renderable without a container |
+| **Compilation** | No compilation required | Compiled to servlets |
+| **XML/HTML Validity** | Enforces well-formed templates | Allows loose syntax |
+| **Spring Boot Support** | Default and recommended view | Limited support |
+| **Prototyping** | Designers can work directly with static HTML | Requires container for preview |
+| **Learning Curve** | Gentle, HTML-based | Steeper, Java-centric |
 
 > 💡 **Note:** Thymeleaf 3.x is the current major version used with Spring Boot 2.x and 3.x. Always ensure your project uses a compatible version.
 
@@ -170,9 +184,52 @@ spring.thymeleaf.cache=false
 spring.thymeleaf.check-template-location=true
 # Template mode (HTML is the default)
 spring.thymeleaf.mode=HTML
+# Encoding (default UTF-8)
+spring.thymeleaf.encoding=UTF-8
 ```
 
-### 2.4 Basic Controller
+### 2.4 Advanced Configuration & Customization
+
+**Custom Template Resolver**
+
+```java
+@Configuration
+public class ThymeleafConfig {
+
+    @Bean
+    public SpringResourceTemplateResolver templateResolver() {
+        SpringResourceTemplateResolver resolver = new SpringResourceTemplateResolver();
+        resolver.setPrefix("classpath:/templates/");
+        resolver.setSuffix(".html");
+        resolver.setTemplateMode(TemplateMode.HTML);
+        resolver.setCharacterEncoding("UTF-8");
+        resolver.setCacheable(false); // Disable for development
+        return resolver;
+    }
+
+    @Bean
+    public SpringTemplateEngine templateEngine() {
+        SpringTemplateEngine engine = new SpringTemplateEngine();
+        engine.setTemplateResolver(templateResolver());
+        engine.setEnableSpringELCompiler(true);
+        // Add custom dialects
+        engine.addDialect(new SpringSecurityDialect());
+        engine.addDialect(new LayoutDialect());
+        return engine;
+    }
+}
+```
+
+**Performance Configuration for Production**
+
+```properties
+# application-prod.properties
+spring.thymeleaf.cache=true
+spring.thymeleaf.cache.ttl=3600  # Cache TTL in seconds
+spring.thymeleaf.servlet.content-type=text/html
+```
+
+### 2.5 Basic Controller
 
 **HomeController.java**
 
@@ -183,12 +240,13 @@ public class HomeController {
     @GetMapping("/")
     public String index(Model model) {
         model.addAttribute("name", "World");
+        model.addAttribute("currentDate", LocalDate.now());
         return "index";  // Resolves to /templates/index.html
     }
 }
 ```
 
-### 2.5 Basic Template
+### 2.6 Basic Template
 
 **templates/index.html**
 
@@ -197,10 +255,12 @@ public class HomeController {
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title th:text="'Hello, ' + ${name}">Page Title</title>
+    <meta charset="UTF-8">
 </head>
 <body>
     <h1 th:text="'Hello, ' + ${name}">Hello, Placeholder</h1>
     <p>Welcome to Thymeleaf!</p>
+    <p>Today is: <span th:text="${currentDate}">2026-01-31</span></p>
 </body>
 </html>
 ```
@@ -1002,6 +1062,7 @@ Thymeleaf provides a dedicated dialect for Spring Security called the Thymeleaf 
     <groupId>org.thymeleaf.extras</groupId>
     <artifactId>thymeleaf-extras-springsecurity6</artifactId>
     <!-- Use springsecurity5 for Spring Security 5.x -->
+    <version>3.1.2</version>
 </dependency>
 ```
 
@@ -1490,7 +1551,284 @@ public class WizardController {
 
 ## 15. Advanced Topics
 
-### 15.1 Preprocessing with th:pre
+### 15.1 Thymeleaf Configuration Extensions
+
+**Custom Template Resolver Example**
+
+```java
+@Configuration
+public class ThymeleafAdvancedConfig {
+
+    @Bean
+    public ITemplateResolver emailTemplateResolver() {
+        ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
+        resolver.setPrefix("templates/email/");
+        resolver.setSuffix(".html");
+        resolver.setTemplateMode(TemplateMode.HTML);
+        resolver.setCharacterEncoding("UTF-8");
+        resolver.setOrder(2); // Lower priority than default resolver
+        return resolver;
+    }
+
+    @Bean
+    public SpringTemplateEngine templateEngine() {
+        SpringTemplateEngine engine = new SpringTemplateEngine();
+        engine.setTemplateResolver(templateResolver());
+        engine.setAdditionalTemplateResolver(emailTemplateResolver());
+        engine.setEnableSpringELCompiler(true);
+        engine.addDialect(new SpringSecurityDialect());
+        engine.addDialect(new LayoutDialect());
+        return engine;
+    }
+}
+```
+
+**Custom Dialect Creation (Brief Overview)**
+
+```java
+public class CustomDialect extends AbstractProcessorDialect {
+    
+    public CustomDialect() {
+        super("Custom Dialect", "custom", 1000);
+    }
+    
+    @Override
+    public Set<IProcessor> getProcessors(String dialectPrefix) {
+        Set<IProcessor> processors = new HashSet<>();
+        processors.add(new CustomProcessor(dialectPrefix));
+        return processors;
+    }
+}
+
+public class CustomProcessor extends AbstractAttributeTagProcessor {
+    // Custom processor implementation
+}
+```
+
+### 15.2 Testing Thymeleaf Templates
+
+**Unit Testing with SpringBootTest**
+
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class ThymeleafTemplateTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void testHomePage() throws Exception {
+        mockMvc.perform(get("/"))
+               .andExpect(status().isOk())
+               .andExpect(view().name("index"))
+               .andExpect(model().attributeExists("name"))
+               .andExpect(content().string(containsString("Hello")));
+    }
+
+    @Test
+    void testFragmentRendering() throws Exception {
+        mockMvc.perform(get("/fragments/navbar"))
+               .andExpect(status().isOk())
+               .andExpect(content().string(containsString("Home")));
+    }
+}
+```
+
+**Testing i18n Messages**
+
+```java
+@Test
+void testInternationalization() throws Exception {
+    mockMvc.perform(get("/home").locale(Locale.FRENCH))
+           .andExpect(status().isOk())
+           .andExpect(content().string(containsString("Bienvenue")));
+}
+```
+
+### 15.3 Thymeleaf and WebJars Integration
+
+**Adding WebJars Dependencies**
+
+```xml
+<!-- pom.xml -->
+<dependency>
+    <groupId>org.webjars</groupId>
+    <artifactId>bootstrap</artifactId>
+    <version>5.3.0</version>
+</dependency>
+<dependency>
+    <groupId>org.webjars</groupId>
+    <artifactId>jquery</artifactId>
+    <version>3.7.0</version>
+</dependency>
+```
+
+**Using WebJars in Thymeleaf Templates**
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!-- Bootstrap CSS from WebJars -->
+    <link rel="stylesheet" 
+          th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}" />
+    
+    <!-- jQuery from WebJars -->
+    <script th:src="@{/webjars/jquery/3.7.0/jquery.min.js}"></script>
+    
+    <!-- Bootstrap JS from WebJars -->
+    <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
+</head>
+<body>
+    <!-- Use Bootstrap components -->
+    <div class="container">
+        <button class="btn btn-primary">Bootstrap Button</button>
+    </div>
+</body>
+</html>
+```
+
+**Spring Boot Configuration for WebJars**
+
+```properties
+# application.properties
+spring.mvc.static-path-pattern=/webjars/**
+spring.web.resources.static-locations=classpath:/META-INF/resources/webjars/
+```
+
+### 15.4 Thymeleaf for Email Templates
+
+**Email Template Structure**
+
+```
+src/main/resources/templates/email/
+├── welcome-email.html
+├── password-reset.html
+└── order-confirmation.html
+```
+
+**Email Template Example**
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${emailSubject}">Welcome</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #4CAF50; color: white; padding: 10px; text-align: center; }
+        .content { padding: 20px; }
+        .button { display: inline-block; padding: 10px 20px; background-color: #4CAF50; 
+                 color: white; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 th:text="#{email.welcome.title}">Welcome to Our Service</h1>
+        </div>
+        <div class="content">
+            <p th:text="'Hello, ' + ${user.name} + '!'">Hello, User!</p>
+            <p th:text="#{email.welcome.message}">
+                Thank you for joining our service. We're excited to have you on board.
+            </p>
+            <p>
+                <a th:href="${activationLink}" class="button" 
+                   th:text="#{email.welcome.activate}">Activate Account</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+```
+
+**Controller for Sending Email**
+
+```java
+@Controller
+public class EmailController {
+
+    @Autowired
+    private JavaMailSender mailSender;
+    
+    @Autowired
+    private TemplateEngine templateEngine;
+
+    public void sendWelcomeEmail(User user) {
+        Context context = new Context();
+        context.setVariable("user", user);
+        context.setVariable("activationLink", generateActivationLink(user));
+        
+        String htmlContent = templateEngine.process("email/welcome-email", context);
+        
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        helper.setTo(user.getEmail());
+        helper.setSubject("Welcome to Our Service");
+        helper.setText(htmlContent, true);
+        
+        mailSender.send(message);
+    }
+}
+```
+
+### 15.5 Conditional Comments for Legacy Browsers
+
+**Internet Explorer Conditional Comments**
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!--[if IE]>
+        <link rel="stylesheet" th:href="@{/css/ie-fixes.css}" />
+    <![endif]-->
+    
+    <!--[if lt IE 9]>
+        <script th:src="@{/js/html5shiv.min.js}"></script>
+        <script th:src="@{/js/respond.min.js}"></script>
+    <![endif]-->
+</head>
+<body>
+    <!--[if IE]>
+        <div class="ie-warning">
+            <p>You are using an outdated browser. Please upgrade for better experience.</p>
+        </div>
+    <![endif]-->
+    
+    <main>
+        <!-- Modern content -->
+        <section th:fragment="modern-content">
+            <h1>Modern Content</h1>
+        </section>
+    </main>
+</body>
+</html>
+```
+
+**Conditional CSS Classes for Browser Detection**
+
+```html
+<!-- Use with Modernizr or similar browser detection -->
+<html class="no-js" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script>
+        document.documentElement.className = 
+            document.documentElement.className.replace('no-js', 'js');
+    </script>
+</head>
+<body>
+    <div th:classappend="${@browserDetector.isIE() ? 'ie-browser' : ''}">
+        <!-- IE-specific adjustments -->
+    </div>
+</body>
+</html>
+```
+
+### 15.6 Preprocessing with th:pre
 
 **Preprocessed Expressions**
 
@@ -1500,9 +1838,18 @@ public class WizardController {
 <div th:pre="'th:text=\'' + ${expressionToEvaluate} + '\''" >
     Preprocessed content
 </div>
+
+<!-- Dynamic attribute names -->
+<input th:pre="'th:' + ${fieldType} + '=\"*{' + ${fieldName} + '}\"'" />
+
+<!-- Complex preprocessing example -->
+<div th:pre="${isRequired ? 'th:required=\"required\"' : ''} 
+              ${hasError ? 'th:classappend=\"has-error\"' : ''}">
+    Form field
+</div>
 ```
 
-### 15.2 th:classappend & th:styleappend
+### 15.7 th:classappend & th:styleappend
 
 **Dynamic Styling**
 
@@ -1513,14 +1860,27 @@ public class WizardController {
     Click Me
 </div>
 
+<!-- Multiple conditional classes -->
+<div class="card"
+     th:classappend="${item.priority == 'high' ? 'card-high' : 
+                      item.priority == 'medium' ? 'card-medium' : 'card-low'}">
+    Priority Card
+</div>
+
 <!-- Append inline styles dynamically -->
 <div style="display: block;"
      th:styleappend="${'background-color: ' + item.color + ';'}">
     Colored Block
 </div>
+
+<!-- Conditional styling with multiple properties -->
+<div th:styleappend="${item.isFeatured ? 
+                      'border: 2px solid gold; box-shadow: 0 0 10px gold;' : ''}">
+    Featured Item
+</div>
 ```
 
-### 15.3 Literal Substitution
+### 15.8 Literal Substitution
 
 **Literal Substitution with `|...|`**
 
@@ -1534,9 +1894,15 @@ public class WizardController {
 
 <!-- Multiple variables -->
 <p th:text="|${firstName} ${lastName} (${age} years old)|">Name (Age)</p>
+
+<!-- Complex expressions inside literal substitution -->
+<p th:text="|Total: $${#numbers.formatDecimal(total, 1, 2)}|">Total: $0.00</p>
+
+<!-- With i18n messages -->
+<p th:text="|#{app.welcome}, ${userName}!|">Welcome, User!</p>
 ```
 
-### 15.4 Conditional Attributes — th:attrappend
+### 15.9 Conditional Attributes — th:attrappend
 
 **Conditional Attribute Values**
 
@@ -1552,9 +1918,20 @@ public class WizardController {
      th:attrappend="class=${premium ? ' premium-card' : ''}">
     Content
 </div>
+
+<!-- Multiple attribute appends -->
+<input type="text"
+       th:attrappend="placeholder=${hasHint ? hintText : ''}
+                      class=${hasError ? 'error' : ''}" />
+
+<!-- Data attribute conditional addition -->
+<div th:attrappend="data-config=${configJson ?: ''}"
+     th:attr="data-enabled=${isEnabled}">
+    Configurable Element
+</div>
 ```
 
-### 15.5 Decoupled Template Logic (Structured Data Files)
+### 15.10 Decoupled Template Logic (Structured Data Files)
 
 Thymeleaf supports an optional mode called "Decoupled Template Logic" where template logic is separated into an external file (e.g., XML or Java) rather than embedded in the HTML. This allows pure HTML files to be used as templates with logic defined externally, maintaining full compatibility with design tools.
 
@@ -1575,6 +1952,9 @@ templates/
 <body>
     <h1 id="title">Welcome</h1>
     <p id="greeting">Hello!</p>
+    <ul id="items">
+        <li class="item">Sample Item</li>
+    </ul>
 </body>
 </html>
 ```
@@ -1586,8 +1966,221 @@ templates/
     <body>
         <h1 id="title" th:text="${pageTitle}"/>
         <p id="greeting" th:text="#{welcome.message}"/>
+        <ul id="items">
+            <li class="item" th:each="item : ${items}" 
+                th:text="${item.name}" th:classappend="${item.featured ? 'featured' : ''}"/>
+        </ul>
     </body>
 </div>
+```
+
+**Configuration for Decoupled Templates**
+
+```properties
+# application.properties
+spring.thymeleaf.decoupled-logic=true
+spring.thymeleaf.decoupled-logic-suffix=.th.xml
+```
+
+### 15.11 Performance Considerations
+
+**Template Caching Strategy**
+
+```properties
+# Development configuration
+spring.thymeleaf.cache=false
+spring.thymeleaf.template-resolver-order=1
+
+# Production configuration
+spring.thymeleaf.cache=true
+spring.thymeleaf.cache.ttl=3600  # 1 hour cache
+spring.thymeleaf.servlet.content-type=text/html
+```
+
+**Performance Optimization Tips**
+
+```html
+<!-- 1. Minimize heavy logic in templates -->
+<!-- Instead of complex calculations in template: -->
+<div th:with="discounted=${#numbers.formatDecimal(product.price * 0.9, 1, 2)}">
+    Price: $[[${discounted}]]
+</div>
+
+<!-- 2. Use th:remove for debug-only content -->
+<div th:remove="${production ? 'all' : 'none'}" class="debug-panel">
+    Debug information
+</div>
+
+<!-- 3. Avoid deep nesting of th:each -->
+<!-- Inefficient: -->
+<div th:each="category : ${categories}">
+    <div th:each="product : ${category.products}">
+        <div th:each="variant : ${product.variants}">
+            [[${variant.name}]]
+        </div>
+    </div>
+</div>
+
+<!-- Better: Flatten data in controller -->
+<div th:each="variant : ${flattenedVariants}">
+    [[${variant.name}]]
+</div>
+
+<!-- 4. Use fragments wisely for reuse -->
+<th:block th:replace="~{fragments :: expensive-to-render-component}"></th:block>
+```
+
+### 15.12 Error Handling & Fallbacks
+
+**Graceful Fallback Strategies**
+
+```html
+<!-- Elvis operator for null/empty fallback -->
+<p th:text="${user.displayName ?: 'Anonymous User'}">User</p>
+
+<!-- Default values in expressions -->
+<p th:text="${#strings.defaultString(message, 'No message available')}">
+    Default message
+</p>
+
+<!-- Safe navigation to avoid NPE -->
+<p th:text="${user?.address?.city ?: 'City not specified'}">City</p>
+
+<!-- Conditional rendering with fallback -->
+<div th:if="${data != null and not data.empty}">
+    <!-- Process data -->
+</div>
+<div th:unless="${data != null and not data.empty}">
+    <p class="empty-state">No data available</p>
+</div>
+
+<!-- Template-level error handling -->
+<div th:if="${#fields.hasErrors('global')}">
+    <div class="alert alert-danger">
+        <p th:each="error : ${#fields.errors('global')}" 
+           th:text="${error}">Global error</p>
+    </div>
+</div>
+```
+
+**Controller Exception Handling Integration**
+
+```java
+@ControllerAdvice
+public class TemplateExceptionHandler {
+    
+    @ExceptionHandler(TemplateProcessingException.class)
+    public String handleTemplateError(Model model, Exception ex) {
+        model.addAttribute("errorMessage", "Template processing failed");
+        model.addAttribute("debugInfo", ex.getMessage());
+        return "error/template-error";
+    }
+}
+```
+
+### 15.13 Accessibility Considerations
+
+**Accessible Thymeleaf Templates**
+
+```html
+<!-- Proper label association -->
+<div class="form-group">
+    <label for="usernameInput" th:text="#{form.username}">Username</label>
+    <input type="text" 
+           th:id="'usernameInput'" 
+           th:field="*{username}"
+           th:aria-describedby="usernameHelp"
+           aria-required="true" />
+    <small id="usernameHelp" class="form-text">
+        [[#{form.username.help}]]
+    </small>
+</div>
+
+<!-- ARIA attributes with Thymeleaf -->
+<button type="button"
+        th:attr="aria-expanded=${isExpanded ? 'true' : 'false'}"
+        th:onclick="${'toggleExpansion(' + item.id + ')'}">
+    [[${isExpanded ? 'Collapse' : 'Expand'}]]
+</button>
+
+<!-- Screen reader only text -->
+<span class="sr-only" th:text="#{sr.current.page}">Current page:</span>
+<span th:text="${currentPage}">1</span>
+
+<!-- Accessible error messages -->
+<div th:if="${#fields.hasErrors('email')}" 
+     role="alert" 
+     aria-live="polite">
+    <span th:errors="*{email}" class="error-message"></span>
+</div>
+
+<!-- Semantic HTML with Thymeleaf -->
+<nav th:fragment="main-navigation" role="navigation" aria-label="Main Navigation">
+    <ul>
+        <li th:each="item : ${navItems}">
+            <a th:href="@{${item.url}}" 
+               th:text="${item.label}"
+               th:classappend="${item.current ? 'active' : ''}"
+               th:attr="aria-current=${item.current ? 'page' : null}">
+                [[${item.label}]]
+            </a>
+        </li>
+    </ul>
+</nav>
+```
+
+### 15.14 Common Pitfalls & Debugging
+
+**Common Issues and Solutions**
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| **Template not found** | Wrong path or suffix | Check `spring.thymeleaf.prefix` and `.suffix` |
+| **Expressions not evaluated** | Missing `th:` namespace | Add `xmlns:th="http://www.thymeleaf.org"` |
+| **NullPointerException** | Missing null checks | Use `?.` safe navigation or `th:if` |
+| **CSRF token missing** | Form without `th:action` | Add `th:action` or manually include CSRF token |
+| **Fragment not rendering** | Wrong fragment reference | Check fragment name and file location |
+| **Cached template changes** | Caching enabled in dev | Set `spring.thymeleaf.cache=false` |
+| **Encoding issues** | Wrong charset | Set `spring.thymeleaf.encoding=UTF-8` |
+| **SpEL not working** | Missing Spring context | Ensure `@Controller` returns view name |
+
+**Debugging Techniques**
+
+```html
+<!-- 1. Debug output in templates -->
+<div th:if="${debugMode}">
+    <pre th:text="${#strings.toString(#ctx)}">Context</pre>
+    <pre th:text="${#strings.toString(#vars)}">Variables</pre>
+</div>
+
+<!-- 2. Temporary debug attributes -->
+<div th:attr="data-debug-id=${item.id}"
+     data-debug-type="[[${item.getClass().getSimpleName()}]]">
+    Content
+</div>
+
+<!-- 3. Conditional logging -->
+<script th:inline="javascript">
+    console.debug('User object:', [[${user}]]);
+    /*[[# th:if="${debugMode}"]]*/
+    console.debug('Debug mode enabled');
+    /*[[/]]*/
+</script>
+
+<!-- 4. Template validation -->
+<!-- Add to HTML for W3C validation -->
+<!-- <!DOCTYPE html> declaration helps -->
+<!-- Use HTML5 Shiv for legacy browsers if needed -->
+```
+
+**Spring Boot DevTools for Template Development**
+
+```properties
+# application-dev.properties
+spring.devtools.livereload.enabled=true
+spring.thymeleaf.cache=false
+spring.thymeleaf.prefix=file:src/main/resources/templates/
+logging.level.org.thymeleaf=DEBUG
 ```
 
 ---
@@ -1632,6 +2225,9 @@ templates/
 | `? :` | Ternary operator | `${x ? 'a' : 'b'}` |
 | `?:` | Elvis operator | `${value ?: 'default'}` |
 | `1..5` | Range | `th:each="i : ${1..5}"` |
+| `?.` | Safe navigation | `${user?.address?.city}` |
+| `#strings` | String utilities | `${#strings.isEmpty(str)}` |
+| `#dates` | Date formatting | `${#dates.format(date, 'dd/MM')}` |
 
 ### 16.3 Spring Security sec: Attributes
 
@@ -1642,3 +2238,138 @@ templates/
 | `sec:authentication-name` | Display the authenticated username. |
 | `sec:authentication` | Access authenticated user properties. |
 | `sec:requires-channel` | Channel security (HTTPS enforcement). |
+
+---
+
+## 17. Glossary
+
+| Term | Definition |
+|------|-----------|
+| **Dialect** | A set of processors that define Thymeleaf's behavior for a specific markup language. |
+| **Processor** | An attribute that modifies or generates content in a template (e.g., `th:text`, `th:each`). |
+| **Expression** | Code within `${...}`, `#{...}`, `@{...}`, etc. that Thymeleaf evaluates. |
+| **Fragment** | A reusable piece of template defined with `th:fragment`. |
+| **Model Attribute** | Data passed from controller to template via `Model.addAttribute()`. |
+| **Natural Templating** | Thymeleaf's ability to render templates as valid HTML in browsers without processing. |
+| **Template Resolution** | The process of finding and loading template files. |
+| **Utility Object** | Built-in objects like `#strings`, `#dates` that provide helper methods. |
+| **Selection Context** | The object selected by `th:object` for use with `*{...}` expressions. |
+| **Inline Processing** | Evaluating expressions directly in text using `[[...]]` syntax. |
+
+---
+
+## 18. Best Practices
+
+### Template Organization
+1. **Use fragments** for reusable components (headers, footers, cards)
+2. **Separate concerns** - Keep logic in controllers, presentation in templates
+3. **Create a fragments directory** for shared components
+4. **Use layout dialects** for consistent page structure
+
+### Performance
+1. **Enable caching in production** (`spring.thymeleaf.cache=true`)
+2. **Avoid complex logic in templates** - Move to controllers/services
+3. **Minimize nested iterations** (`th:each` inside `th:each`)
+4. **Use `th:remove`** for debug-only content
+
+### Security
+1. **Prefer `th:text` over `th:utext`** to prevent XSS
+2. **Always use `th:action`** for CSRF protection
+3. **Validate user input** in controllers before templates
+4. **Use Spring Security dialect** for authorization checks
+
+### Maintainability
+1. **Use meaningful fragment names** and organize by feature
+2. **Keep templates focused** - One template per view responsibility
+3. **Comment complex template logic** with `<!-- /* */ -->`
+4. **Use constants for repeated strings** via `@{}` or message properties
+
+### Internationalization
+1. **Externalize all text** to message properties files
+2. **Provide fallback messages** in default properties file
+3. **Test with multiple locales** during development
+4. **Consider RTL languages** in CSS planning
+
+### Accessibility
+1. **Use semantic HTML elements** with Thymeleaf
+2. **Include ARIA attributes** where appropriate
+3. **Ensure proper label associations** in forms
+4. **Test with screen readers**
+
+---
+
+## 19. Troubleshooting FAQ
+
+### Q1: Why is my Thymeleaf template not rendering?
+**A:** Check:
+- Template location: `src/main/resources/templates/`
+- File extension: `.html`
+- Controller returns correct view name
+- `spring.thymeleaf.prefix` and `.suffix` settings
+- No caching in development: `spring.thymeleaf.cache=false`
+
+### Q2: Why are my expressions `${...}` not evaluated?
+**A:** Ensure:
+- HTML has `xmlns:th="http://www.thymeleaf.org"`
+- Model attributes are correctly added in controller
+- Expression syntax is correct
+- No typos in attribute names
+
+### Q3: How do I debug Thymeleaf templates?
+**A:** Use:
+- `th:attr="data-debug=value"` for attribute debugging
+- `<pre th:text="${#strings.toString(#vars)}">` to see all variables
+- Spring Boot DevTools for live reload
+- `logging.level.org.thymeleaf=DEBUG` in application.properties
+
+### Q4: Why is my fragment not found?
+**A:** Verify:
+- Fragment file exists and is accessible
+- Fragment name matches exactly (case-sensitive)
+- Correct syntax: `~{file :: fragment}`
+- File is in template resolver's search path
+
+### Q5: How to handle null values gracefully?
+**A:** Use:
+- Safe navigation: `user?.address?.city`
+- Elvis operator: `value ?: 'default'`
+- `th:if` conditions: `th:if="${value != null}"`
+- `#strings.defaultString(value, 'fallback')`
+
+### Q6: CSRF token missing in forms?
+**A:** Solutions:
+- Use `th:action` instead of plain `action` attribute
+- Manually add: `<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />`
+- Ensure Spring Security is configured
+
+### Q7: How to improve template performance?
+**A:** Optimize by:
+- Enabling cache in production
+- Reducing complex expressions in loops
+- Using fragments for repeated content
+- Flattening data structures in controller
+
+### Q8: Internationalization not working?
+**A:** Check:
+- Message files in `src/main/resources/`
+- Correct naming: `messages_en.properties`
+- Locale resolver configuration
+- Message key references in templates
+
+### Q9: Form binding not working?
+**A:** Verify:
+- `th:object` points to correct model attribute
+- `th:field` matches object property names
+- Form method matches controller expectation
+- No conflicting `name` attributes
+
+### Q10: How to test Thymeleaf templates?
+**A:** Use:
+- `@SpringBootTest` with `@AutoConfigureMockMvc`
+- `mockMvc.perform()` for integration tests
+- `TestRestTemplate` for full stack testing
+- Fragment-specific test endpoints
+
+---
+
+*This comprehensive reference journal covers Thymeleaf 3.x with Spring Boot 3.x. For the latest updates, always check the official [Thymeleaf documentation](https://www.thymeleaf.org/documentation.html) and [Spring Boot reference](https://docs.spring.io/spring-boot/docs/current/reference/html/).*
