@@ -54,6 +54,7 @@
    - 8.2 [th:replace & th:insert](#82-threplace--thinsert)
    - 8.3 [th:with — Local Variable Declaration](#83-thwith--local-variable-declaration)
    - 8.4 [th:fragment — Defining Fragments](#84-thfragment--defining-fragments)
+   - 8.5 [th:block — Virtual Wrapper Element](#85-thblock--virtual-wrapper-element)
 9. [Fragments & Layout Composition](#9-fragments--layout-composition)
    - 9.1 [Defining Fragments](#91-defining-fragments)
    - 9.2 [Including Fragments](#92-including-fragments)
@@ -78,7 +79,10 @@
     - 12.3 [#numbers — Number Formatting](#123-numbers--number-formatting)
     - 12.4 [#dates & #temporals — Date/Time Formatting](#124-dates--temporals--datetime-formatting)
     - 12.5 [#lists — Collection Utilities](#125-lists--collection-utilities)
-    - 12.6 [#ids — ID Generation for Fragments](#126-ids--id-generation-for-fragments)
+    - 12.6 [#sets — Set Utilities](#126-sets--set-utilities)
+    - 12.7 [#maps — Map Utilities](#127-maps--map-utilities)
+    - 12.8 [#objects — General Object Utilities](#128-objects--general-object-utilities)
+    - 12.9 [#ids — ID Generation for Fragments](#129-ids--id-generation-for-fragments)
 13. [Internationalization (i18n)](#13-internationalization-i18n)
     - 13.1 [Resource Bundle Structure](#131-resource-bundle-structure)
     - 13.2 [Message Files](#132-message-files)
@@ -783,9 +787,38 @@ Thymeleaf provides processors that control the lifecycle and structure of HTML e
 </div>
 ```
 
----
+### 8.5 th:block — Virtual Wrapper Element
 
-## 9. Fragments & Layout Composition
+`th:block` is a special Thymeleaf element that acts as a logical grouping container but **produces no HTML output**. It is useful when you need to apply `th:each`, `th:if`, or other processors to a group of sibling elements without introducing an extra wrapper `<div>` or `<span>`.
+
+**th:block Examples**
+
+```html
+<!-- Without th:block, you'd need a wrapping <div> just for th:each -->
+<!-- th:block disappears from the output entirely -->
+<th:block th:each="item : ${items}">
+    <dt th:text="${item.term}">Term</dt>
+    <dd th:text="${item.definition}">Definition</dd>
+</th:block>
+
+<!-- Conditional rendering of multiple siblings -->
+<th:block th:if="${user.isAdmin}">
+    <li><a th:href="@{/admin/users}">Manage Users</a></li>
+    <li><a th:href="@{/admin/logs}">View Logs</a></li>
+    <li><a th:href="@{/admin/settings}">Settings</a></li>
+</th:block>
+
+<!-- Combining th:each and th:if without nesting -->
+<th:block th:each="notification : ${notifications}" th:if="${notification.unread}">
+    <div class="notification unread">
+        <span th:text="${notification.message}">Message</span>
+    </div>
+</th:block>
+```
+
+> 💡 **Note:** `th:block` is rendered as nothing in the final HTML. It exists purely to let you apply Thymeleaf processors to a group of elements that don't share a single natural parent tag.
+
+---
 
 Fragments are the mechanism Thymeleaf uses to achieve template reuse and layout composition. They allow you to define reusable blocks of HTML in one template and include them in others.
 
@@ -888,8 +921,7 @@ For full layout inheritance (similar to Razor or Blade layouts), the Thymeleaf L
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://ultraq.net.au/thymeleaf/layout">
 <head>
-    <title>My App</title>
-    <!-- layout:title-pattern replaces the title with child's title -->
+    <!-- layout:title-pattern merges child's title with the layout title -->
     <title layout:title-pattern="${ChildTitle} - ${LayoutTitle}">My App</title>
     <link rel="stylesheet" th:href="@{/css/style.css}" />
     <!-- layout:fragment="scripts" will be filled by child -->
@@ -1312,7 +1344,64 @@ Thymeleaf provides a set of built-in utility objects (prefixed with `#`) that ca
 </div>
 ```
 
-### 12.6 #ids — ID Generation for Fragments
+### 12.6 #sets — Set Utilities
+
+**#sets Examples**
+
+```html
+<!-- Check if a set is empty -->
+<div th:if="${#sets.isEmpty(selectedTags)}">No tags selected.</div>
+
+<!-- Check if a set contains a value -->
+<span th:if="${#sets.contains(activeRoles, 'MODERATOR')}">Moderator</span>
+
+<!-- Get size of a set -->
+<span th:text="${#sets.size(selectedTags)}">0</span>
+```
+
+### 12.7 #maps — Map Utilities
+
+**#maps Examples**
+
+```html
+<!-- Check if a map is empty -->
+<div th:if="${#maps.isEmpty(metadata)}">No metadata available.</div>
+
+<!-- Check if a map contains a specific key -->
+<span th:if="${#maps.containsKey(settings, 'theme')}">
+    Theme: [[${settings.get('theme')}]]
+</span>
+
+<!-- Get all keys or values -->
+<ul>
+    <li th:each="key : ${#maps.keys(settings)}" th:text="${key}">Key</li>
+</ul>
+
+<!-- Get size -->
+<span th:text="${#maps.size(settings)}">0</span>
+```
+
+### 12.8 #objects — General Object Utilities
+
+**#objects Examples**
+
+```html
+<!-- Null-safe toString — avoids NPE on null objects -->
+<p th:text="${#objects.toString(user, 'N/A')}">User info</p>
+
+<!-- Null-safe equals comparison -->
+<span th:if="${#objects.equals(user.status, 'ACTIVE')}">Active</span>
+
+<!-- nullSafe — returns empty string if value is null -->
+<p th:text="${#objects.nullSafe(user.bio, '')}">Biography</p>
+
+<!-- Useful inside th:with for safe defaults -->
+<div th:with="displayName=${#objects.toString(user.name, 'Anonymous')}">
+    <h2 th:text="${displayName}">Name</h2>
+</div>
+```
+
+### 12.9 #ids — ID Generation for Fragments
 
 **Unique ID Generation**
 
@@ -1697,7 +1786,7 @@ spring.mvc.static-path-pattern=/webjars/**
 spring.web.resources.static-locations=classpath:/META-INF/resources/webjars/
 ```
 
-### 15.4 Thymeleaf for Email Templates
+> 💡 **Note:** Spring Boot auto-configures `/webjars/**` out of the box. You only need the properties above if you are overriding the default static resource handling. Adding them unnecessarily can conflict with Spring Boot's auto-configuration and cause WebJars to stop resolving.
 
 **Email Template Structure**
 
@@ -1777,7 +1866,7 @@ public class EmailController {
 
 ### 15.5 Conditional Comments for Legacy Browsers
 
-**Internet Explorer Conditional Comments**
+> ⚠️ **Legacy / Archival:** IE conditional comments have been obsolete since Internet Explorer was retired. This section is retained here only as a historical reference for teams maintaining older codebases. New projects targeting Spring Boot 3.x have no need for any of the patterns below.
 
 ```html
 <!DOCTYPE html>
@@ -2089,7 +2178,7 @@ public class TemplateExceptionHandler {
     <input type="text" 
            th:id="'usernameInput'" 
            th:field="*{username}"
-           th:aria-describedby="usernameHelp"
+           th:attr="aria-describedby='usernameHelp'"
            aria-required="true" />
     <small id="usernameHelp" class="form-text">
         [[#{form.username.help}]]
@@ -2098,10 +2187,16 @@ public class TemplateExceptionHandler {
 
 <!-- ARIA attributes with Thymeleaf -->
 <button type="button"
-        th:attr="aria-expanded=${isExpanded ? 'true' : 'false'}"
-        th:onclick="${'toggleExpansion(' + item.id + ')'}">
+        th:attr="aria-expanded=${isExpanded ? 'true' : 'false'},
+                data-item-id=${item.id}"
+        class="toggle-btn">
     [[${isExpanded ? 'Collapse' : 'Expand'}]]
 </button>
+
+<!-- Bind event in a separate JS file (CSP-safe): -->
+<!-- document.querySelectorAll('.toggle-btn').forEach(btn => {
+         btn.addEventListener('click', () => toggleExpansion(btn.dataset.itemId));
+     }); -->
 
 <!-- Screen reader only text -->
 <span class="sr-only" th:text="#{sr.current.page}">Current page:</span>
@@ -2122,7 +2217,7 @@ public class TemplateExceptionHandler {
                th:text="${item.label}"
                th:classappend="${item.current ? 'active' : ''}"
                th:attr="aria-current=${item.current ? 'page' : null}">
-                [[${item.label}]]
+                Link
             </a>
         </li>
     </ul>
@@ -2208,6 +2303,7 @@ logging.level.org.thymeleaf=DEBUG
 | `th:replace` | Replace an element with a fragment. |
 | `th:insert` | Insert a fragment inside an element. |
 | `th:remove` | Remove an element (`all`, `tag`, `body`, etc.). |
+| `th:block` | Virtual wrapper element — applies processors without outputting a tag. |
 | `th:with` | Define local variables. |
 | `th:classappend` | Append CSS classes dynamically. |
 | `th:inline` | Enable inline processing (`text`, `javascript`). |
