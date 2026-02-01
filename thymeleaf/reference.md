@@ -1,12 +1,14 @@
 # THYMELEAF
+
 ## Template Engine
+
 ### Comprehensive Reference Journal for Spring Boot Applications
 
-*Covering: Syntax & Expressions · Standard Dialects · Text Processing*
-*Iteration & Conditionals · Fragments & Layouts · Spring Integration*
-*Spring Security · Form Handling · Internationalization · And More*
+_Covering: Syntax & Expressions · Standard Dialects · Text Processing_
+_Iteration & Conditionals · Fragments & Layouts · Spring Integration_
+_Spring Security · Form Handling · Internationalization · And More_
 
-*January 2026*
+_January 2026_
 
 ---
 
@@ -116,6 +118,20 @@
 17. [Glossary](#17-glossary)
 18. [Best Practices](#18-best-practices)
 19. [Troubleshooting FAQ](#19-troubleshooting-faq)
+20. [Thymeleaf Mental Models & Rendering Flow](#20-thymeleaf-mental-models--rendering-flow)
+    - 20.1 [Template Processing Lifecycle](#201-template-processing-lifecycle)
+    - 20.2 [Attribute Interaction Rules](#202-attribute-interaction-rules)
+    - 20.3 [Fragment Resolution](#203-fragment-resolution)
+21. [Debugging & Diagnostics Guide](#21-debugging--diagnostics-guide)
+    - 21.1 [Common Runtime Errors & Their Causes](#211-common-runtime-errors--their-causes)
+    - 21.2 [Debugging Techniques](#212-debugging-techniques)
+22. [Performance & Design Tradeoffs](#22-performance--design-tradeoffs)
+    - 22.1 [What to Compute in Controllers vs Templates](#221-what-to-compute-in-controllers-vs-templates)
+    - 22.2 [Fragment & Layout Performance](#222-fragment--layout-performance)
+23. [Testing Thymeleaf Templates](#23-testing-thymeleaf-templates)
+    - 23.1 [View-Level Testing with MockMvc](#231-view-level-testing-with-mockmvc)
+    - 23.2 [Testing Conditional Rendering](#232-testing-conditional-rendering)
+    - 23.3 [Testing Fragments & Layouts](#233-testing-fragments--layouts)
 
 ---
 
@@ -133,14 +149,14 @@ Thymeleaf is a modern, server-side Java template engine designed to produce well
 
 ### 1.2 Thymeleaf vs. JSP
 
-| Feature | Thymeleaf | JSP |
-|---|---|---|
-| **Natural HTML** | Templates are valid HTML; renderable in browsers | Not renderable without a container |
-| **Compilation** | No compilation required | Compiled to servlets |
-| **XML/HTML Validity** | Enforces well-formed templates | Allows loose syntax |
-| **Spring Boot Support** | Default and recommended view | Limited support |
-| **Prototyping** | Designers can work directly with static HTML | Requires container for preview |
-| **Learning Curve** | Gentle, HTML-based | Steeper, Java-centric |
+| Feature                 | Thymeleaf                                        | JSP                                |
+| ----------------------- | ------------------------------------------------ | ---------------------------------- |
+| **Natural HTML**        | Templates are valid HTML; renderable in browsers | Not renderable without a container |
+| **Compilation**         | No compilation required                          | Compiled to servlets               |
+| **XML/HTML Validity**   | Enforces well-formed templates                   | Allows loose syntax                |
+| **Spring Boot Support** | Default and recommended view                     | Limited support                    |
+| **Prototyping**         | Designers can work directly with static HTML     | Requires container for preview     |
+| **Learning Curve**      | Gentle, HTML-based                               | Steeper, Java-centric              |
 
 > 💡 **Note:** Thymeleaf 3.x is the current major version used with Spring Boot 2.x and 3.x. Always ensure your project uses a compatible version.
 
@@ -257,15 +273,15 @@ public class HomeController {
 ```html
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
+  <head>
     <title th:text="'Hello, ' + ${name}">Page Title</title>
-    <meta charset="UTF-8">
-</head>
-<body>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
     <h1 th:text="'Hello, ' + ${name}">Hello, Placeholder</h1>
     <p>Welcome to Thymeleaf!</p>
     <p>Today is: <span th:text="${currentDate}">2026-01-31</span></p>
-</body>
+  </body>
 </html>
 ```
 
@@ -277,16 +293,16 @@ All Thymeleaf attributes are prefixed with `th:`. The core expression types are 
 
 ### 3.1 Expression Types Overview
 
-| Expression | Description |
-|---|---|
-| `${...}` | Variable Expressions — Access model attributes, bean properties, and utility objects. |
-| `#{...}` | Message Expressions — Retrieve internationalization (i18n) messages from resource bundles. |
-| `@{...}` | Link Expressions — Generate URLs with context-path and query parameter support. |
-| `~{...}` | Fragment Expressions — Reference external or inline fragments for layout composition. |
-| `*{...}` | Selection Variable Expressions — Used with `th:object` to select a sub-context. |
-| `'...'` | Literal — String literals. Use single quotes inside attribute values. |
-| `... + ...` | String Concatenation — Use the `+` operator to concatenate strings. |
-| `... \|\| ...` | String Append — A more readable alternative to `+` for concatenation. |
+| Expression     | Description                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------ |
+| `${...}`       | Variable Expressions — Access model attributes, bean properties, and utility objects.      |
+| `#{...}`       | Message Expressions — Retrieve internationalization (i18n) messages from resource bundles. |
+| `@{...}`       | Link Expressions — Generate URLs with context-path and query parameter support.            |
+| `~{...}`       | Fragment Expressions — Reference external or inline fragments for layout composition.      |
+| `*{...}`       | Selection Variable Expressions — Used with `th:object` to select a sub-context.            |
+| `'...'`        | Literal — String literals. Use single quotes inside attribute values.                      |
+| `... + ...`    | String Concatenation — Use the `+` operator to concatenate strings.                        |
+| `... \|\| ...` | String Append — A more readable alternative to `+` for concatenation.                      |
 
 ### 3.2 Variable Expressions (`${...}`)
 
@@ -351,9 +367,12 @@ Variable expressions access data added to the model by the controller. They supp
 ```html
 <!-- th:object sets the selection context -->
 <div th:object="${user}">
-    <p th:text="*{name}">Name</p>        <!-- Equivalent to ${user.name} -->
-    <p th:text="*{address.city}">City</p> <!-- Equivalent to ${user.address.city} -->
-    <p th:text="*{getAge()}">Age</p>      <!-- Method call on the selected object -->
+  <p th:text="*{name}">Name</p>
+  <!-- Equivalent to ${user.name} -->
+  <p th:text="*{address.city}">City</p>
+  <!-- Equivalent to ${user.address.city} -->
+  <p th:text="*{getAge()}">Age</p>
+  <!-- Method call on the selected object -->
 </div>
 ```
 
@@ -374,19 +393,19 @@ Variable expressions access data added to the model by the controller. They supp
 
 ### 3.7 Literals & Operators
 
-| Type / Operator | Description |
-|---|---|
-| **Numeric** | `42`, `3.14`, `1_000_000` — Integer and decimal numbers. |
-| **String** | `'Hello World'` — Single-quoted strings. |
-| **Boolean** | `true`, `false` |
-| **Null** | `null` |
-| **Token** | Characters that do not need quoting (e.g., `Spring`, `active`). |
-| **Arithmetic** | `+` `−` `*` `/` `%` — Standard math operators. |
-| **Relational** | `>` `<` `>=` `<=` `==` `!=` — Comparisons. Use `gt`, `lt`, `ge`, `le`, `eq`, `ne` in HTML to avoid escaping issues. |
-| **Logical** | `&& (and)`, `\|\| (or)`, `! (not)` |
-| **Conditional** | `condition ? valueIfTrue : valueIfFalse` — Ternary operator. |
-| **Elvis** | `value ?: defaultValue` — Returns `defaultValue` if value is null or empty. |
-| **Range** | `1..10` — Used primarily with `th:each` for iteration. |
+| Type / Operator | Description                                                                                                         |
+| --------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Numeric**     | `42`, `3.14`, `1_000_000` — Integer and decimal numbers.                                                            |
+| **String**      | `'Hello World'` — Single-quoted strings.                                                                            |
+| **Boolean**     | `true`, `false`                                                                                                     |
+| **Null**        | `null`                                                                                                              |
+| **Token**       | Characters that do not need quoting (e.g., `Spring`, `active`).                                                     |
+| **Arithmetic**  | `+` `−` `*` `/` `%` — Standard math operators.                                                                      |
+| **Relational**  | `>` `<` `>=` `<=` `==` `!=` — Comparisons. Use `gt`, `lt`, `ge`, `le`, `eq`, `ne` in HTML to avoid escaping issues. |
+| **Logical**     | `&& (and)`, `\|\| (or)`, `! (not)`                                                                                  |
+| **Conditional** | `condition ? valueIfTrue : valueIfFalse` — Ternary operator.                                                        |
+| **Elvis**       | `value ?: defaultValue` — Returns `defaultValue` if value is null or empty.                                         |
+| **Range**       | `1..10` — Used primarily with `th:each` for iteration.                                                              |
 
 ---
 
@@ -396,11 +415,11 @@ The Standard Dialect is the core set of processors that Thymeleaf provides out o
 
 ### 4.1 Text & Output Processors
 
-| Processor | Description |
-|---|---|
-| `th:text` | Replaces the body of the tag with the evaluated expression (escapes HTML entities). |
-| `th:utext` | Replaces the body of the tag with unescaped HTML output. Use with caution (XSS risk). |
-| `th:value` | Sets the `value` attribute of form elements (`input`, `select`, `textarea`). |
+| Processor   | Description                                                                              |
+| ----------- | ---------------------------------------------------------------------------------------- |
+| `th:text`   | Replaces the body of the tag with the evaluated expression (escapes HTML entities).      |
+| `th:utext`  | Replaces the body of the tag with unescaped HTML output. Use with caution (XSS risk).    |
+| `th:value`  | Sets the `value` attribute of form elements (`input`, `select`, `textarea`).             |
 | `th:action` | Sets the `action` attribute on `<form>` elements, typically with `@{}` link expressions. |
 
 **th:text vs th:utext**
@@ -417,17 +436,17 @@ The Standard Dialect is the core set of processors that Thymeleaf provides out o
 
 ### 4.2 Attribute Modification Processors
 
-| Processor | Description |
-|---|---|
-| `th:attr` | Generic processor to set any attribute dynamically. |
-| `th:attrsappend` | Appends a value to an existing attribute (useful for CSS classes). |
-| `th:attrsprepend` | Prepends a value to an existing attribute. |
+| Processor         | Description                                                                  |
+| ----------------- | ---------------------------------------------------------------------------- |
+| `th:attr`         | Generic processor to set any attribute dynamically.                          |
+| `th:attrsappend`  | Appends a value to an existing attribute (useful for CSS classes).           |
+| `th:attrsprepend` | Prepends a value to an existing attribute.                                   |
 | `th:class-append` | Shortcut to append CSS classes. Equivalent to `th:attrsappend="class='...'"` |
-| `th:id` | Sets the `id` attribute of a tag. |
-| `th:name` | Sets the `name` attribute of a tag. |
-| `th:src` | Sets the `src` attribute (for `<img>`, `<script>`, `<iframe>`). |
-| `th:href` | Sets the `href` attribute (for `<a>`, `<link>`). |
-| `th:data-*` | Sets HTML5 `data-*` attributes dynamically. |
+| `th:id`           | Sets the `id` attribute of a tag.                                            |
+| `th:name`         | Sets the `name` attribute of a tag.                                          |
+| `th:src`          | Sets the `src` attribute (for `<img>`, `<script>`, `<iframe>`).              |
+| `th:href`         | Sets the `href` attribute (for `<a>`, `<link>`).                             |
+| `th:data-*`       | Sets HTML5 `data-*` attributes dynamically.                                  |
 
 **Attribute Processors in Use**
 
@@ -437,15 +456,15 @@ The Standard Dialect is the core set of processors that Thymeleaf provides out o
 
 <!-- th:class-append — conditional CSS class -->
 <div class="card" th:class-append="${item.featured ? 'featured' : ''}">
+  <!-- th:id and th:name -->
+  <input th:id="'field-' + ${index}" th:name="items[${index}].value" />
 
-<!-- th:id and th:name -->
-<input th:id="'field-' + ${index}" th:name="items[${index}].value" />
+  <!-- th:src with link expression -->
+  <img th:src="@{/images/logo.png}" alt="Logo" />
 
-<!-- th:src with link expression -->
-<img th:src="@{/images/logo.png}" alt="Logo" />
-
-<!-- th:data-* attributes -->
-<tr th:attr="data-id=${item.id}" th:each="item : ${items}">
+  <!-- th:data-* attributes -->
+  <tr th:attr="data-id=${item.id}" th:each="item : ${items}"></tr>
+</div>
 ```
 
 ---
@@ -486,7 +505,7 @@ Thymeleaf supports inline processing, which allows expressions to be evaluated d
 ```html
 <!-- Disable inline processing for a block (e.g., for JavaScript literals) -->
 <script th:inline="none">
-    var message = '[[This is literal text, not processed]]';
+  var message = "[[This is literal text, not processed]]";
 </script>
 ```
 
@@ -496,12 +515,12 @@ Thymeleaf supports inline processing, which allows expressions to be evaluated d
 
 ```html
 <script th:inline="javascript">
-    // Output a model variable as a safe JavaScript string
-    var userName = [[${user.name}]];
-    // Output an object as a JSON literal
-    var userObj = [[${user}]];
-    // Literal output (not processed)
-    var literal = /*[[# This is not processed #]]*/  'default';
+  // Output a model variable as a safe JavaScript string
+  var userName = [[${user.name}]];
+  // Output an object as a JSON literal
+  var userObj = [[${user}]];
+  // Literal output (not processed)
+  var literal = /*[[# This is not processed #]]*/  'default';
 </script>
 ```
 
@@ -519,16 +538,18 @@ Thymeleaf provides several processors for conditional rendering of elements and 
 
 ```html
 <!-- Render the element only if the condition is true -->
-<p th:if="${user != null}">Welcome, <span th:text="${user.name}">User</span>!</p>
+<p th:if="${user != null}">
+  Welcome, <span th:text="${user.name}">User</span>!
+</p>
 
 <!-- Condition on a boolean property -->
 <div th:if="${showAnnouncement}" class="alert alert-info">
-    <p th:text="${announcement}">Announcement text here.</p>
+  <p th:text="${announcement}">Announcement text here.</p>
 </div>
 
 <!-- Condition on collection: true if non-null and non-empty -->
 <ul th:if="${items}">
-    <li th:each="item : ${items}" th:text="${item.name}">Item</li>
+  <li th:each="item : ${items}" th:text="${item.name}">Item</li>
 </ul>
 
 <!-- String condition: true if non-null and non-empty -->
@@ -551,18 +572,18 @@ Thymeleaf provides several processors for conditional rendering of elements and 
 
 Understanding what Thymeleaf considers truthy is essential for correct conditional rendering:
 
-| Value | Truthiness |
-|---|---|
-| `null` | `false` — Element is NOT rendered. |
-| `false` (Boolean) | `false` — Element is NOT rendered. |
-| `0` (Number) | `false` — Element is NOT rendered. |
-| Empty String `""` | `false` — Element is NOT rendered. |
-| Empty Collection | `false` — Element is NOT rendered. |
-| `true` (Boolean) | `true` — Element IS rendered. |
-| Non-zero Number | `true` — Element IS rendered. |
-| Non-empty String | `true` — Element IS rendered. |
-| Non-empty Collection | `true` — Element IS rendered. |
-| Any Object | `true` — Element IS rendered (if not null). |
+| Value                | Truthiness                                  |
+| -------------------- | ------------------------------------------- |
+| `null`               | `false` — Element is NOT rendered.          |
+| `false` (Boolean)    | `false` — Element is NOT rendered.          |
+| `0` (Number)         | `false` — Element is NOT rendered.          |
+| Empty String `""`    | `false` — Element is NOT rendered.          |
+| Empty Collection     | `false` — Element is NOT rendered.          |
+| `true` (Boolean)     | `true` — Element IS rendered.               |
+| Non-zero Number      | `true` — Element IS rendered.               |
+| Non-empty String     | `true` — Element IS rendered.               |
+| Non-empty Collection | `true` — Element IS rendered.               |
+| Any Object           | `true` — Element IS rendered (if not null). |
 
 ### 6.4 th:switch / th:case — Switch Statements
 
@@ -571,19 +592,19 @@ Understanding what Thymeleaf considers truthy is essential for correct condition
 ```html
 <!-- th:switch evaluates the expression once -->
 <div th:switch="${user.role}">
-    <p th:case="'ADMIN'" class="badge-admin">Administrator</p>
-    <p th:case="'EDITOR'" class="badge-editor">Editor</p>
-    <p th:case="'USER'" class="badge-user">Standard User</p>
-    <!-- Default case -->
-    <p th:case="*" class="badge-guest">Guest</p>
+  <p th:case="'ADMIN'" class="badge-admin">Administrator</p>
+  <p th:case="'EDITOR'" class="badge-editor">Editor</p>
+  <p th:case="'USER'" class="badge-user">Standard User</p>
+  <!-- Default case -->
+  <p th:case="*" class="badge-guest">Guest</p>
 </div>
 
 <!-- Switch with numeric values -->
 <div th:switch="${status}">
-    <span th:case="1">Pending</span>
-    <span th:case="2">Active</span>
-    <span th:case="3">Closed</span>
-    <span th:case="*">Unknown</span>
+  <span th:case="1">Pending</span>
+  <span th:case="2">Active</span>
+  <span th:case="3">Closed</span>
+  <span th:case="*">Unknown</span>
 </div>
 ```
 
@@ -602,16 +623,16 @@ The `th:each` processor is the primary mechanism for iterating over collections,
 ```html
 <!-- Iterate over a list of strings -->
 <ul>
-    <li th:each="item : ${items}" th:text="${item}">Item</li>
+  <li th:each="item : ${items}" th:text="${item}">Item</li>
 </ul>
 
 <!-- Iterate over a list of objects -->
 <table>
-    <tr th:each="user : ${users}">
-        <td th:text="${user.name}">Name</td>
-        <td th:text="${user.email}">Email</td>
-        <td th:text="${user.role}">Role</td>
-    </tr>
+  <tr th:each="user : ${users}">
+    <td th:text="${user.name}">Name</td>
+    <td th:text="${user.email}">Email</td>
+    <td th:text="${user.role}">Role</td>
+  </tr>
 </table>
 ```
 
@@ -623,32 +644,32 @@ A second variable can be declared in `th:each` to receive an iteration status ob
 
 ```html
 <ul>
-    <li th:each="item, status : ${items}">
-        <!-- status.index   — zero-based index (0, 1, 2, ...) -->
-        <!-- status.count   — one-based count (1, 2, 3, ...) -->
-        <!-- status.first   — true if this is the first iteration -->
-        <!-- status.last    — true if this is the last iteration -->
-        <!-- status.size    — total number of elements -->
-        <!-- status.current — the current iteration element -->
+  <li th:each="item, status : ${items}">
+    <!-- status.index   — zero-based index (0, 1, 2, ...) -->
+    <!-- status.count   — one-based count (1, 2, 3, ...) -->
+    <!-- status.first   — true if this is the first iteration -->
+    <!-- status.last    — true if this is the last iteration -->
+    <!-- status.size    — total number of elements -->
+    <!-- status.current — the current iteration element -->
 
-        <span th:text="${status.count}" class="num">1</span>.
-        <span th:text="${item.name}">Item Name</span>
-        <span th:if="${status.first}" class="badge">New</span>
-    </li>
+    <span th:text="${status.count}" class="num">1</span>.
+    <span th:text="${item.name}">Item Name</span>
+    <span th:if="${status.first}" class="badge">New</span>
+  </li>
 </ul>
 ```
 
-| Property | Description |
-|---|---|
-| `status.index` | Zero-based index of the current iteration (0, 1, 2, ...). |
-| `status.count` | One-based iteration count (1, 2, 3, ...). |
-| `status.first` | Returns `true` if this is the first element. |
-| `status.last` | Returns `true` if this is the last element. |
-| `status.size` | Total number of elements in the iterable. |
-| `status.current` | The element being processed in the current iteration. |
-| `status.even` | Returns `true` if the current index is even. |
-| `status.odd` | Returns `true` if the current index is odd. |
-| `status.empty` | Returns `true` if the iterable is empty. |
+| Property         | Description                                               |
+| ---------------- | --------------------------------------------------------- |
+| `status.index`   | Zero-based index of the current iteration (0, 1, 2, ...). |
+| `status.count`   | One-based iteration count (1, 2, 3, ...).                 |
+| `status.first`   | Returns `true` if this is the first element.              |
+| `status.last`    | Returns `true` if this is the last element.               |
+| `status.size`    | Total number of elements in the iterable.                 |
+| `status.current` | The element being processed in the current iteration.     |
+| `status.even`    | Returns `true` if the current index is even.              |
+| `status.odd`     | Returns `true` if the current index is odd.               |
+| `status.empty`   | Returns `true` if the iterable is empty.                  |
 
 ### 7.3 Iterating Over Maps
 
@@ -657,10 +678,10 @@ A second variable can be declared in `th:each` to receive an iteration status ob
 ```html
 <!-- Iterating over a Map<String, String> -->
 <table>
-    <tr th:each="entry : ${configMap}">
-        <td th:text="${entry.key}">Key</td>
-        <td th:text="${entry.value}">Value</td>
-    </tr>
+  <tr th:each="entry : ${configMap}">
+    <td th:text="${entry.key}">Key</td>
+    <td th:text="${entry.value}">Value</td>
+  </tr>
 </table>
 ```
 
@@ -674,7 +695,7 @@ A second variable can be declared in `th:each` to receive an iteration status ob
 
 <!-- Numeric range iteration (1 to 5 inclusive) -->
 <div th:each="i : ${1..5}">
-    <span th:text="${i}">N</span>
+  <span th:text="${i}">N</span>
 </div>
 ```
 
@@ -685,14 +706,14 @@ A second variable can be declared in `th:each` to receive an iteration status ob
 ```html
 <!-- Show content only when items exist -->
 <div th:if="${items and not items.empty}">
-    <ul>
-        <li th:each="item : ${items}" th:text="${item.name}">Item</li>
-    </ul>
+  <ul>
+    <li th:each="item : ${items}" th:text="${item.name}">Item</li>
+  </ul>
 </div>
 
 <!-- Show alternative content when empty -->
 <div th:unless="${items and not items.empty}" class="empty-state">
-    <p>No items found. Try adding one!</p>
+  <p>No items found. Try adding one!</p>
 </div>
 ```
 
@@ -704,13 +725,13 @@ Thymeleaf provides processors that control the lifecycle and structure of HTML e
 
 ### 8.1 th:remove — Removing Elements
 
-| Value | Behavior |
-|---|---|
-| `body` | Removes the body (children) of the tag, leaving the tag itself. |
-| `tag` | Removes the tag itself, leaving its body (children) in place. |
-| `all` | Removes the tag and all its body (equivalent to not rendering the element at all). |
-| `value-if-empty` | Removes the tag body only if it is empty after processing. |
-| `only-children` | Removes only the children of the tag, keeping the tag itself. |
+| Value            | Behavior                                                                           |
+| ---------------- | ---------------------------------------------------------------------------------- |
+| `body`           | Removes the body (children) of the tag, leaving the tag itself.                    |
+| `tag`            | Removes the tag itself, leaving its body (children) in place.                      |
+| `all`            | Removes the tag and all its body (equivalent to not rendering the element at all). |
+| `value-if-empty` | Removes the tag body only if it is empty after processing.                         |
+| `only-children`  | Removes only the children of the tag, keeping the tag itself.                      |
 
 **th:remove Examples**
 
@@ -738,7 +759,7 @@ Thymeleaf provides processors that control the lifecycle and structure of HTML e
 
 <!-- th:insert: inserts the fragment as a child of the tag -->
 <div th:insert="~{fragments :: header}">
-    <!-- Fragment content is inserted here, inside the div -->
+  <!-- Fragment content is inserted here, inside the div -->
 </div>
 
 <!-- th:replace with arguments -->
@@ -752,17 +773,19 @@ Thymeleaf provides processors that control the lifecycle and structure of HTML e
 ```html
 <!-- Declare a local variable for use within the scope -->
 <div th:with="fullName=${user.firstName + ' ' + user.lastName}">
-    <p th:text="${fullName}">Full Name</p>
+  <p th:text="${fullName}">Full Name</p>
 </div>
 
 <!-- Multiple local variables -->
 <div th:with="x=${10}, y=${20}, sum=${10 + 20}">
-    <p th:text="'Sum: ' + ${sum}">Sum</p>
+  <p th:text="'Sum: ' + ${sum}">Sum</p>
 </div>
 
 <!-- Useful for computed values to avoid repeating expressions -->
 <div th:with="discountedPrice=${product.price * (1 - discount)}">
-    <span th:text="'$' + ${#numbers.formatDecimal(discountedPrice, 1, 2)}">$0.00</span>
+  <span th:text="'$' + ${#numbers.formatDecimal(discountedPrice, 1, 2)}"
+    >$0.00</span
+  >
 </div>
 ```
 
@@ -773,17 +796,17 @@ Thymeleaf provides processors that control the lifecycle and structure of HTML e
 ```html
 <!-- Define a named fragment in a template -->
 <div th:fragment="header">
-    <header>
-        <nav>Navigation content</nav>
-    </header>
+  <header>
+    <nav>Navigation content</nav>
+  </header>
 </div>
 
 <!-- Fragment with parameters -->
 <div th:fragment="card(title, content)">
-    <div class="card">
-        <h3 th:text="${title}">Title</h3>
-        <p th:text="${content}">Content</p>
-    </div>
+  <div class="card">
+    <h3 th:text="${title}">Title</h3>
+    <p th:text="${content}">Content</p>
+  </div>
 </div>
 ```
 
@@ -797,28 +820,33 @@ Thymeleaf provides processors that control the lifecycle and structure of HTML e
 <!-- Without th:block, you'd need a wrapping <div> just for th:each -->
 <!-- th:block disappears from the output entirely -->
 <th:block th:each="item : ${items}">
-    <dt th:text="${item.term}">Term</dt>
-    <dd th:text="${item.definition}">Definition</dd>
+  <dt th:text="${item.term}">Term</dt>
+  <dd th:text="${item.definition}">Definition</dd>
 </th:block>
 
 <!-- Conditional rendering of multiple siblings -->
 <th:block th:if="${user.isAdmin}">
-    <li><a th:href="@{/admin/users}">Manage Users</a></li>
-    <li><a th:href="@{/admin/logs}">View Logs</a></li>
-    <li><a th:href="@{/admin/settings}">Settings</a></li>
+  <li><a th:href="@{/admin/users}">Manage Users</a></li>
+  <li><a th:href="@{/admin/logs}">View Logs</a></li>
+  <li><a th:href="@{/admin/settings}">Settings</a></li>
 </th:block>
 
 <!-- Combining th:each and th:if without nesting -->
-<th:block th:each="notification : ${notifications}" th:if="${notification.unread}">
-    <div class="notification unread">
-        <span th:text="${notification.message}">Message</span>
-    </div>
+<th:block
+  th:each="notification : ${notifications}"
+  th:if="${notification.unread}"
+>
+  <div class="notification unread">
+    <span th:text="${notification.message}">Message</span>
+  </div>
 </th:block>
 ```
 
 > 💡 **Note:** `th:block` is rendered as nothing in the final HTML. It exists purely to let you apply Thymeleaf processors to a group of elements that don't share a single natural parent tag.
 
 ---
+
+## 9. Fragments & Layout Composition
 
 Fragments are the mechanism Thymeleaf uses to achieve template reuse and layout composition. They allow you to define reusable blocks of HTML in one template and include them in others.
 
@@ -829,27 +857,27 @@ Fragments are the mechanism Thymeleaf uses to achieve template reuse and layout 
 ```html
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<body>
+  <body>
     <!-- Named fragment -->
     <div th:fragment="navbar">
-        <nav class="navbar">
-            <a th:href="@{/}">Home</a>
-            <a th:href="@{/about}">About</a>
-        </nav>
+      <nav class="navbar">
+        <a th:href="@{/}">Home</a>
+        <a th:href="@{/about}">About</a>
+      </nav>
     </div>
 
     <!-- Fragment with parameters -->
     <div th:fragment="alert(type, message)">
-        <div th:class="'alert alert-' + ${type}">
-            <p th:text="${message}">Alert text</p>
-        </div>
+      <div th:class="'alert alert-' + ${type}">
+        <p th:text="${message}">Alert text</p>
+      </div>
     </div>
 
     <!-- Fragment using CSS selector style -->
     <footer id="siteFooter">
-        <p>&copy; 2026 My Application</p>
+      <p>&copy; 2026 My Application</p>
     </footer>
-</body>
+  </body>
 </html>
 ```
 
@@ -865,7 +893,9 @@ Fragments are the mechanism Thymeleaf uses to achieve template reuse and layout 
 <div th:replace="~{fragments :: navbar}"></div>
 
 <!-- Passing arguments to a fragment -->
-<div th:replace="~{fragments :: alert('success', 'Record saved successfully!')}"></div>
+<div
+  th:replace="~{fragments :: alert('success', 'Record saved successfully!')}"
+></div>
 
 <!-- Using a variable as argument -->
 <div th:replace="~{fragments :: alert(${alertType}, ${alertMessage})}"></div>
@@ -881,22 +911,22 @@ Fragments are the mechanism Thymeleaf uses to achieve template reuse and layout 
 ```html
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
+  <head>
     <title th:text="${pageTitle}">Default Title</title>
     <link rel="stylesheet" th:href="@{/css/style.css}" />
-</head>
-<body>
+  </head>
+  <body>
     <div th:replace="~{fragments :: navbar}"></div>
 
     <main>
-        <!-- Content will be injected here by child pages -->
-        <div th:fragment="content">
-            <p>Default content — override in child templates.</p>
-        </div>
+      <!-- Content will be injected here by child pages -->
+      <div th:fragment="content">
+        <p>Default content — override in child templates.</p>
+      </div>
     </main>
 
     <div th:replace="~{fragments :: footer}"></div>
-</body>
+  </body>
 </html>
 ```
 
@@ -918,25 +948,27 @@ For full layout inheritance (similar to Razor or Blade layouts), the Thymeleaf L
 
 ```html
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://ultraq.net.au/thymeleaf/layout">
-<head>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://ultraq.net.au/thymeleaf/layout"
+>
+  <head>
     <!-- layout:title-pattern merges child's title with the layout title -->
     <title layout:title-pattern="${ChildTitle} - ${LayoutTitle}">My App</title>
     <link rel="stylesheet" th:href="@{/css/style.css}" />
     <!-- layout:fragment="scripts" will be filled by child -->
     <script layout:fragment="scripts"></script>
-</head>
-<body>
+  </head>
+  <body>
     <div th:replace="~{fragments :: navbar}"></div>
 
     <!-- Main content area — child pages fill this -->
     <main>
-        <layout:fragment>content</layout:fragment>
+      <layout:fragment>content</layout:fragment>
     </main>
 
     <div th:replace="~{fragments :: footer}"></div>
-</body>
+  </body>
 </html>
 ```
 
@@ -944,24 +976,26 @@ For full layout inheritance (similar to Razor or Blade layouts), the Thymeleaf L
 
 ```html
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://ultraq.net.au/thymeleaf/layout"
-      layout:decorate="~{layout/default}">
-<head>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://ultraq.net.au/thymeleaf/layout"
+  layout:decorate="~{layout/default}"
+>
+  <head>
     <title>Dashboard</title>
-</head>
-<body>
+  </head>
+  <body>
     <!-- This replaces <layout:fragment>content</layout:fragment> -->
     <div layout:fragment="content">
-        <h1>Dashboard</h1>
-        <p>Your dashboard content here.</p>
+      <h1>Dashboard</h1>
+      <p>Your dashboard content here.</p>
     </div>
 
     <!-- This fills the scripts fragment in the head -->
     <div layout:fragment="scripts">
-        <script th:src="@{/js/dashboard.js}"></script>
+      <script th:src="@{/js/dashboard.js}"></script>
     </div>
-</body>
+  </body>
 </html>
 ```
 
@@ -980,24 +1014,23 @@ Thymeleaf integrates tightly with Spring MVC for form binding, validation, and e
 ```html
 <!-- th:object binds the form to a model attribute -->
 <form th:action="@{/users/register}" th:object="${registerForm}" method="post">
+  <!-- th:field automatically sets id, name, and value attributes -->
+  <div class="form-group">
+    <label for="username">Username</label>
+    <input type="text" th:field="*{username}" class="form-control" />
+  </div>
 
-    <!-- th:field automatically sets id, name, and value attributes -->
-    <div class="form-group">
-        <label for="username">Username</label>
-        <input type="text" th:field="*{username}" class="form-control" />
-    </div>
+  <div class="form-group">
+    <label for="email">Email</label>
+    <input type="email" th:field="*{email}" class="form-control" />
+  </div>
 
-    <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" th:field="*{email}" class="form-control" />
-    </div>
+  <div class="form-group">
+    <label for="password">Password</label>
+    <input type="password" th:field="*{password}" class="form-control" />
+  </div>
 
-    <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" th:field="*{password}" class="form-control" />
-    </div>
-
-    <button type="submit" class="btn btn-primary">Register</button>
+  <button type="submit" class="btn btn-primary">Register</button>
 </form>
 ```
 
@@ -1005,14 +1038,14 @@ Thymeleaf integrates tightly with Spring MVC for form binding, validation, and e
 
 The `th:field` processor expands into three standard HTML attributes: `id`, `name`, and `value`. It uses the selection context set by `th:object`.
 
-| Element | What th:field Generates |
-|---|---|
-| `text` | `id="username" name="username" value="currentValue"` |
-| `password` | `id="password" name="password" value=""` |
-| `checkbox` | `id="agree" name="agree"` (checked if value is true) |
-| `radio` | `id="role" name="role" value="ADMIN"` (checked if matches) |
-| `select` | `id="country" name="country"` (selected option marked) |
-| `textarea` | `id="bio" name="bio"` — value is placed as text content |
+| Element    | What th:field Generates                                    |
+| ---------- | ---------------------------------------------------------- |
+| `text`     | `id="username" name="username" value="currentValue"`       |
+| `password` | `id="password" name="password" value=""`                   |
+| `checkbox` | `id="agree" name="agree"` (checked if value is true)       |
+| `radio`    | `id="role" name="role" value="ADMIN"` (checked if matches) |
+| `select`   | `id="country" name="country"` (selected option marked)     |
+| `textarea` | `id="bio" name="bio"` — value is placed as text content    |
 
 ### 10.3 Select, Radio, and Checkbox
 
@@ -1020,32 +1053,35 @@ The `th:field` processor expands into three standard HTML attributes: `id`, `nam
 
 ```html
 <form th:object="${form}" th:action="@{/submit}" method="post">
+  <!-- Select with options -->
+  <select th:field="*{country}">
+    <option value="">-- Select Country --</option>
+    <!-- th:each populates options; th:selected marks the current value -->
+    <option
+      th:each="country : ${countries}"
+      th:value="${country.code}"
+      th:text="${country.name}"
+      th:selected="${country.code == *{country}}"
+    >
+      Country
+    </option>
+  </select>
 
-    <!-- Select with options -->
-    <select th:field="*{country}">
-        <option value="">-- Select Country --</option>
-        <!-- th:each populates options; th:selected marks the current value -->
-        <option th:each="country : ${countries}"
-                th:value="${country.code}"
-                th:text="${country.name}"
-                th:selected="${country.code == *{country}}">Country</option>
-    </select>
+  <!-- Radio buttons -->
+  <div th:each="role : ${availableRoles}">
+    <input type="radio" th:field="*{role}" th:value="${role}" />
+    <label th:text="${role}">Role</label>
+  </div>
 
-    <!-- Radio buttons -->
-    <div th:each="role : ${availableRoles}">
-        <input type="radio" th:field="*{role}" th:value="${role}" />
-        <label th:text="${role}">Role</label>
-    </div>
+  <!-- Checkbox (single boolean) -->
+  <input type="checkbox" th:field="*{agreeToTerms}" />
+  <label>I agree to the terms</label>
 
-    <!-- Checkbox (single boolean) -->
-    <input type="checkbox" th:field="*{agreeToTerms}" />
-    <label>I agree to the terms</label>
-
-    <!-- Checkbox (multiple values — collection binding) -->
-    <div th:each="perm : ${allPermissions}">
-        <input type="checkbox" th:field="*{permissions}" th:value="${perm}" />
-        <label th:text="${perm}">Permission</label>
-    </div>
+  <!-- Checkbox (multiple values — collection binding) -->
+  <div th:each="perm : ${allPermissions}">
+    <input type="checkbox" th:field="*{permissions}" th:value="${perm}" />
+    <label th:text="${perm}">Permission</label>
+  </div>
 </form>
 ```
 
@@ -1055,25 +1091,32 @@ The `th:field` processor expands into three standard HTML attributes: `id`, `nam
 
 ```html
 <form th:object="${registerForm}" th:action="@{/register}" method="post">
+  <!-- Global form errors -->
+  <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
+    <ul>
+      <li th:each="error : ${#fields.globalErrors()}" th:text="${error}">
+        Error
+      </li>
+    </ul>
+  </div>
 
-    <!-- Global form errors -->
-    <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
-        <ul>
-            <li th:each="error : ${#fields.globalErrors()}" th:text="${error}">Error</li>
-        </ul>
-    </div>
+  <!-- Per-field error display -->
+  <div
+    class="form-group"
+    th:classappend="${#fields.hasErrors('username') ? 'has-error' : ''}"
+  >
+    <label for="username">Username</label>
+    <input type="text" th:field="*{username}" class="form-control" />
+    <!-- #fields.errors('fieldName') returns the list of error messages -->
+    <span
+      th:if="${#fields.hasErrors('username')}"
+      th:errors="*{username}"
+      class="help-block error-text"
+      >Error message</span
+    >
+  </div>
 
-    <!-- Per-field error display -->
-    <div class="form-group" th:classappend="${#fields.hasErrors('username') ? 'has-error' : ''}">
-        <label for="username">Username</label>
-        <input type="text" th:field="*{username}" class="form-control" />
-        <!-- #fields.errors('fieldName') returns the list of error messages -->
-        <span th:if="${#fields.hasErrors('username')}"
-              th:errors="*{username}"
-              class="help-block error-text">Error message</span>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Register</button>
+  <button type="submit" class="btn btn-primary">Register</button>
 </form>
 ```
 
@@ -1103,8 +1146,10 @@ Thymeleaf provides a dedicated dialect for Spring Security called the Thymeleaf 
 **HTML Element with Security Namespace**
 
 ```html
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+></html>
 ```
 
 ### 11.3 sec:authorize — Role-Based Rendering
@@ -1114,32 +1159,32 @@ Thymeleaf provides a dedicated dialect for Spring Security called the Thymeleaf 
 ```html
 <!-- Show only if the user is authenticated -->
 <div sec:authorize="isAuthenticated()">
-    <p>Welcome back!</p>
+  <p>Welcome back!</p>
 </div>
 
 <!-- Show only for anonymous users -->
 <div sec:authorize="isAnonymous()">
-    <a th:href="@{/login}">Please log in</a>
+  <a th:href="@{/login}">Please log in</a>
 </div>
 
 <!-- Show only for users with a specific role -->
 <div sec:authorize="hasRole('ADMIN')">
-    <a th:href="@{/admin/dashboard}">Admin Panel</a>
+  <a th:href="@{/admin/dashboard}">Admin Panel</a>
 </div>
 
 <!-- Multiple roles (OR logic) -->
 <div sec:authorize="hasAnyRole('ADMIN', 'EDITOR')">
-    <a th:href="@{/content/manage}">Content Management</a>
+  <a th:href="@{/content/manage}">Content Management</a>
 </div>
 
 <!-- Show only for users with a specific authority -->
 <div sec:authorize="hasAuthority('PERMISSION_EDIT')">
-    <button>Edit</button>
+  <button>Edit</button>
 </div>
 
 <!-- Combined conditions -->
 <div sec:authorize="isAuthenticated() and hasRole('PREMIUM')">
-    <a th:href="@{/premium/features}">Premium Features</a>
+  <a th:href="@{/premium/features}">Premium Features</a>
 </div>
 ```
 
@@ -1181,13 +1226,17 @@ Thymeleaf provides a dedicated dialect for Spring Security called the Thymeleaf 
 ```html
 <!-- Spring Security CSRF is automatically included when using th:action -->
 <form th:action="@{/submit}" method="post">
-    <!-- CSRF token is auto-injected — no manual action needed! -->
-    <input type="text" name="data" />
-    <button type="submit">Submit</button>
+  <!-- CSRF token is auto-injected — no manual action needed! -->
+  <input type="text" name="data" />
+  <button type="submit">Submit</button>
 </form>
 
 <!-- Manual CSRF token (if needed outside a form) -->
-<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+<input
+  type="hidden"
+  th:name="${_csrf.parameterName}"
+  th:value="${_csrf.token}"
+/>
 ```
 
 > 💡 **Note:** When using `th:action` on a `<form>`, Spring Security's CSRF token is automatically appended as a hidden field. Manual inclusion is only necessary when not using `th:action`.
@@ -1198,40 +1247,49 @@ Thymeleaf provides a dedicated dialect for Spring Security called the Thymeleaf 
 
 ```html
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head><title>Login</title></head>
-<body>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head>
+    <title>Login</title>
+  </head>
+  <body>
     <h1>Sign In</h1>
 
     <!-- Display error on failed login -->
     <div th:if="${param.error}" class="alert alert-danger">
-        <p>Invalid username or password.</p>
+      <p>Invalid username or password.</p>
     </div>
 
     <!-- Display message on logout -->
     <div th:if="${param.logout}" class="alert alert-info">
-        <p>You have been logged out.</p>
+      <p>You have been logged out.</p>
     </div>
 
     <!-- Login form — action must match Spring Security's login URL -->
     <form th:action="@{/login}" method="post">
-        <div class="form-group">
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" class="form-control" />
-        </div>
-        <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" class="form-control" />
-        </div>
-        <button type="submit" class="btn btn-primary">Sign In</button>
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" class="form-control" />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          class="form-control"
+        />
+      </div>
+      <button type="submit" class="btn btn-primary">Sign In</button>
     </form>
 
     <!-- Logout link -->
     <form th:action="@{/logout}" method="post">
-        <button type="submit" class="btn btn-link">Logout</button>
+      <button type="submit" class="btn btn-link">Logout</button>
     </form>
-</body>
+  </body>
 </html>
 ```
 
@@ -1243,20 +1301,20 @@ Thymeleaf provides a set of built-in utility objects (prefixed with `#`) that ca
 
 ### 12.1 Overview of Utility Objects
 
-| Object | Purpose |
-|---|---|
-| `#strings` | String utility methods (`isEmpty`, `contains`, `startsWith`, `trim`, `replace`, etc.). |
-| `#lists` | List utility methods (`size`, `contains`, `isEmpty`, `sort`, etc.). |
-| `#sets` | Set utility methods (`size`, `contains`, `isEmpty`, etc.). |
-| `#maps` | Map utility methods (`size`, `containsKey`, `keys`, `values`, etc.). |
-| `#numbers` | Number formatting (`formatDecimal`, `formatInteger`, `formatPercent`, etc.). |
-| `#dates` | Date formatting and manipulation (`format`, `createSequence`, `year`, `month`, etc.). |
-| `#calendars` | Calendar utility methods (`format`, `year`, `month`, `day`, etc.). |
-| `#temporals` | Java 8 Time API utilities (`format`, `year`, `month`, `dayOfWeek`, etc.). |
-| `#booleans` | Boolean utility methods (`isTrue`, `isFalse`, etc.). |
-| `#objects` | Objects utility (`nullSafe`, `toString`, `equals`, etc.). |
-| `#fields` | Form validation field utilities (`hasErrors`, `errors`, `globalErrors`, etc.). |
-| `#ids` | ID generation utilities for repeated fragments (`seq`, `next`, etc.). |
+| Object       | Purpose                                                                                |
+| ------------ | -------------------------------------------------------------------------------------- |
+| `#strings`   | String utility methods (`isEmpty`, `contains`, `startsWith`, `trim`, `replace`, etc.). |
+| `#lists`     | List utility methods (`size`, `contains`, `isEmpty`, `sort`, etc.).                    |
+| `#sets`      | Set utility methods (`size`, `contains`, `isEmpty`, etc.).                             |
+| `#maps`      | Map utility methods (`size`, `containsKey`, `keys`, `values`, etc.).                   |
+| `#numbers`   | Number formatting (`formatDecimal`, `formatInteger`, `formatPercent`, etc.).           |
+| `#dates`     | Date formatting and manipulation (`format`, `createSequence`, `year`, `month`, etc.).  |
+| `#calendars` | Calendar utility methods (`format`, `year`, `month`, `day`, etc.).                     |
+| `#temporals` | Java 8 Time API utilities (`format`, `year`, `month`, `dayOfWeek`, etc.).              |
+| `#booleans`  | Boolean utility methods (`isTrue`, `isFalse`, etc.).                                   |
+| `#objects`   | Objects utility (`nullSafe`, `toString`, `equals`, etc.).                              |
+| `#fields`    | Form validation field utilities (`hasErrors`, `errors`, `globalErrors`, etc.).         |
+| `#ids`       | ID generation utilities for repeated fragments (`seq`, `next`, etc.).                  |
 
 ### 12.2 #strings — String Utilities
 
@@ -1313,10 +1371,14 @@ Thymeleaf provides a set of built-in utility objects (prefixed with `#`) that ca
 <p th:text="${#dates.format(createdAt, 'dd/MM/yyyy')}">31/01/2026</p>
 
 <!-- Format a java.time.LocalDate (Java 8+) -->
-<p th:text="${#temporals.format(eventDate, 'MMMM dd, yyyy')}">January 31, 2026</p>
+<p th:text="${#temporals.format(eventDate, 'MMMM dd, yyyy')}">
+  January 31, 2026
+</p>
 
 <!-- Format a java.time.LocalDateTime -->
-<p th:text="${#temporals.format(timestamp, 'dd/MM/yyyy HH:mm')}">31/01/2026 14:30</p>
+<p th:text="${#temporals.format(timestamp, 'dd/MM/yyyy HH:mm')}">
+  31/01/2026 14:30
+</p>
 
 <!-- Extract components from LocalDate -->
 <p th:text="${#temporals.year(eventDate)}">2026</p>
@@ -1340,7 +1402,7 @@ Thymeleaf provides a set of built-in utility objects (prefixed with `#`) that ca
 
 <!-- Convert to a list (useful for arrays) -->
 <div th:with="itemList=${#lists.toList(itemArray)}">
-    <p th:text="${#lists.size(itemList)}">0</p>
+  <p th:text="${#lists.size(itemList)}">0</p>
 </div>
 ```
 
@@ -1369,12 +1431,12 @@ Thymeleaf provides a set of built-in utility objects (prefixed with `#`) that ca
 
 <!-- Check if a map contains a specific key -->
 <span th:if="${#maps.containsKey(settings, 'theme')}">
-    Theme: [[${settings.get('theme')}]]
+  Theme: [[${settings.get('theme')}]]
 </span>
 
 <!-- Get all keys or values -->
 <ul>
-    <li th:each="key : ${#maps.keys(settings)}" th:text="${key}">Key</li>
+  <li th:each="key : ${#maps.keys(settings)}" th:text="${key}">Key</li>
 </ul>
 
 <!-- Get size -->
@@ -1397,7 +1459,7 @@ Thymeleaf provides a set of built-in utility objects (prefixed with `#`) that ca
 
 <!-- Useful inside th:with for safe defaults -->
 <div th:with="displayName=${#objects.toString(user.name, 'Anonymous')}">
-    <h2 th:text="${displayName}">Name</h2>
+  <h2 th:text="${displayName}">Name</h2>
 </div>
 ```
 
@@ -1409,8 +1471,8 @@ Thymeleaf provides a set of built-in utility objects (prefixed with `#`) that ca
 <!-- Generate unique IDs in repeated fragments to avoid conflicts -->
 <!-- #ids.seq('prefix') generates: prefix1, prefix2, prefix3, ... -->
 <div th:each="item : ${items}">
-    <input type="text" th:id="${#ids.seq('input-')}" />
-    <label th:for="${#ids.last('input-')}" th:text="${item.name}">Label</label>
+  <input type="text" th:id="${#ids.seq('input-')}" />
+  <label th:for="${#ids.last('input-')}" th:text="${item.name}">Label</label>
 </div>
 
 <!-- #ids.next and #ids.last reference the same sequence -->
@@ -1474,7 +1536,9 @@ app.order.summary=Commande #{0} passée le {1} pour {2}€.
 <p th:text="#{app.greeting(${user.name})}">Hello, User!</p>
 
 <!-- Message with multiple parameters -->
-<p th:text="#{app.order.summary(${order.id}, ${order.date}, ${order.total})}">Order details</p>
+<p th:text="#{app.order.summary(${order.id}, ${order.date}, ${order.total})}">
+  Order details
+</p>
 
 <!-- Inline message expression -->
 <p>[[#{app.welcome}]]</p>
@@ -1490,9 +1554,9 @@ app.order.summary=Commande #{0} passée le {1} pour {2}€.
 ```html
 <!-- Simple language switcher links -->
 <div class="language-switcher">
-    <a th:href="@{/home(lang='en')}">English</a>
-    <a th:href="@{/home(lang='fr')}">Français</a>
-    <a th:href="@{/home(lang='de')}">Deutsch</a>
+  <a th:href="@{/home(lang='en')}">English</a>
+  <a th:href="@{/home(lang='fr')}">Français</a>
+  <a th:href="@{/home(lang='de')}">Deutsch</a>
 </div>
 ```
 
@@ -1567,7 +1631,7 @@ public class ProductController {
 <!-- Access all model attributes via ${} -->
 <h1>Products (Total: [[${products.size()}]])</h1>
 <ul>
-    <li th:each="product : ${products}" th:text="${product.name}">Product</li>
+  <li th:each="product : ${products}" th:text="${product.name}">Product</li>
 </ul>
 ```
 
@@ -1589,7 +1653,7 @@ public String createProduct(@ModelAttribute Product product,
 ```html
 <!-- Template — display flash message after redirect -->
 <div th:if="${successMessage}" class="alert alert-success">
-    <p th:text="${successMessage}">Success!</p>
+  <p th:text="${successMessage}">Success!</p>
 </div>
 ```
 
@@ -1676,11 +1740,11 @@ public class ThymeleafAdvancedConfig {
 
 ```java
 public class CustomDialect extends AbstractProcessorDialect {
-    
+
     public CustomDialect() {
         super("Custom Dialect", "custom", 1000);
     }
-    
+
     @Override
     public Set<IProcessor> getProcessors(String dialectPrefix) {
         Set<IProcessor> processors = new HashSet<>();
@@ -1758,23 +1822,27 @@ void testInternationalization() throws Exception {
 ```html
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
+  <head>
     <!-- Bootstrap CSS from WebJars -->
-    <link rel="stylesheet" 
-          th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}" />
-    
+    <link
+      rel="stylesheet"
+      th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}"
+    />
+
     <!-- jQuery from WebJars -->
     <script th:src="@{/webjars/jquery/3.7.0/jquery.min.js}"></script>
-    
+
     <!-- Bootstrap JS from WebJars -->
-    <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
-</head>
-<body>
+    <script
+      th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"
+    ></script>
+  </head>
+  <body>
     <!-- Use Bootstrap components -->
     <div class="container">
-        <button class="btn btn-primary">Bootstrap Button</button>
+      <button class="btn btn-primary">Bootstrap Button</button>
     </div>
-</body>
+  </body>
 </html>
 ```
 
@@ -1802,35 +1870,59 @@ src/main/resources/templates/email/
 ```html
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title th:text="${emailSubject}">Welcome</title>
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #4CAF50; color: white; padding: 10px; text-align: center; }
-        .content { padding: 20px; }
-        .button { display: inline-block; padding: 10px 20px; background-color: #4CAF50; 
-                 color: white; text-decoration: none; border-radius: 5px; }
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px;
+        text-align: center;
+      }
+      .content {
+        padding: 20px;
+      }
+      .button {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #4caf50;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="header">
-            <h1 th:text="#{email.welcome.title}">Welcome to Our Service</h1>
-        </div>
-        <div class="content">
-            <p th:text="'Hello, ' + ${user.name} + '!'">Hello, User!</p>
-            <p th:text="#{email.welcome.message}">
-                Thank you for joining our service. We're excited to have you on board.
-            </p>
-            <p>
-                <a th:href="${activationLink}" class="button" 
-                   th:text="#{email.welcome.activate}">Activate Account</a>
-            </p>
-        </div>
+      <div class="header">
+        <h1 th:text="#{email.welcome.title}">Welcome to Our Service</h1>
+      </div>
+      <div class="content">
+        <p th:text="'Hello, ' + ${user.name} + '!'">Hello, User!</p>
+        <p th:text="#{email.welcome.message}">
+          Thank you for joining our service. We're excited to have you on board.
+        </p>
+        <p>
+          <a
+            th:href="${activationLink}"
+            class="button"
+            th:text="#{email.welcome.activate}"
+            >Activate Account</a
+          >
+        </p>
+      </div>
     </div>
-</body>
+  </body>
 </html>
 ```
 
@@ -1842,7 +1934,7 @@ public class EmailController {
 
     @Autowired
     private JavaMailSender mailSender;
-    
+
     @Autowired
     private TemplateEngine templateEngine;
 
@@ -1850,15 +1942,15 @@ public class EmailController {
         Context context = new Context();
         context.setVariable("user", user);
         context.setVariable("activationLink", generateActivationLink(user));
-        
+
         String htmlContent = templateEngine.process("email/welcome-email", context);
-        
+
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
         helper.setTo(user.getEmail());
         helper.setSubject("Welcome to Our Service");
         helper.setText(htmlContent, true);
-        
+
         mailSender.send(message);
     }
 }
@@ -1871,30 +1963,33 @@ public class EmailController {
 ```html
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
+  <head>
     <!--[if IE]>
-        <link rel="stylesheet" th:href="@{/css/ie-fixes.css}" />
+      <link rel="stylesheet" th:href="@{/css/ie-fixes.css}" />
     <![endif]-->
-    
+
     <!--[if lt IE 9]>
-        <script th:src="@{/js/html5shiv.min.js}"></script>
-        <script th:src="@{/js/respond.min.js}"></script>
+      <script th:src="@{/js/html5shiv.min.js}"></script>
+      <script th:src="@{/js/respond.min.js}"></script>
     <![endif]-->
-</head>
-<body>
+  </head>
+  <body>
     <!--[if IE]>
-        <div class="ie-warning">
-            <p>You are using an outdated browser. Please upgrade for better experience.</p>
-        </div>
+      <div class="ie-warning">
+        <p>
+          You are using an outdated browser. Please upgrade for better
+          experience.
+        </p>
+      </div>
     <![endif]-->
-    
+
     <main>
-        <!-- Modern content -->
-        <section th:fragment="modern-content">
-            <h1>Modern Content</h1>
-        </section>
+      <!-- Modern content -->
+      <section th:fragment="modern-content">
+        <h1>Modern Content</h1>
+      </section>
     </main>
-</body>
+  </body>
 </html>
 ```
 
@@ -1903,17 +1998,17 @@ public class EmailController {
 ```html
 <!-- Use with Modernizr or similar browser detection -->
 <html class="no-js" xmlns:th="http://www.thymeleaf.org">
-<head>
+  <head>
     <script>
-        document.documentElement.className = 
-            document.documentElement.className.replace('no-js', 'js');
+      document.documentElement.className =
+        document.documentElement.className.replace("no-js", "js");
     </script>
-</head>
-<body>
+  </head>
+  <body>
     <div th:classappend="${@browserDetector.isIE() ? 'ie-browser' : ''}">
-        <!-- IE-specific adjustments -->
+      <!-- IE-specific adjustments -->
     </div>
-</body>
+  </body>
 </html>
 ```
 
@@ -1932,7 +2027,7 @@ public class EmailController {
 <input th:pre="'th:' + ${fieldType} + '=\"*{' + ${fieldName} + '}\"'" />
 
 <!-- Complex preprocessing example -->
-<div th:pre="${isRequired ? 'th:required=\"required\"' : ''} 
+<div th:pre="${isRequired ? 'th:required=\"required\"' : ''}
               ${hasError ? 'th:classappend=\"has-error\"' : ''}">
     Form field
 </div>
@@ -1944,28 +2039,36 @@ public class EmailController {
 
 ```html
 <!-- Append a class based on a condition -->
-<div class="btn btn-default"
-     th:classappend="${item.active ? 'btn-primary' : 'btn-outline'}">
-    Click Me
+<div
+  class="btn btn-default"
+  th:classappend="${item.active ? 'btn-primary' : 'btn-outline'}"
+>
+  Click Me
 </div>
 
 <!-- Multiple conditional classes -->
-<div class="card"
-     th:classappend="${item.priority == 'high' ? 'card-high' : 
-                      item.priority == 'medium' ? 'card-medium' : 'card-low'}">
-    Priority Card
+<div
+  class="card"
+  th:classappend="${item.priority == 'high' ? 'card-high' : 
+                      item.priority == 'medium' ? 'card-medium' : 'card-low'}"
+>
+  Priority Card
 </div>
 
 <!-- Append inline styles dynamically -->
-<div style="display: block;"
-     th:styleappend="${'background-color: ' + item.color + ';'}">
-    Colored Block
+<div
+  style="display: block;"
+  th:styleappend="${'background-color: ' + item.color + ';'}"
+>
+  Colored Block
 </div>
 
 <!-- Conditional styling with multiple properties -->
-<div th:styleappend="${item.isFeatured ? 
-                      'border: 2px solid gold; box-shadow: 0 0 10px gold;' : ''}">
-    Featured Item
+<div
+  th:styleappend="${item.isFeatured ? 
+                      'border: 2px solid gold; box-shadow: 0 0 10px gold;' : ''}"
+>
+  Featured Item
 </div>
 ```
 
@@ -1998,25 +2101,30 @@ public class EmailController {
 ```html
 <!-- Only add the 'disabled' attribute when condition is true -->
 <!-- Using th:attr with a null value removes the attribute -->
-<input type="text"
-       th:attr="disabled=${isReadOnly ? 'disabled' : null}"
-       name="field" />
+<input
+  type="text"
+  th:attr="disabled=${isReadOnly ? 'disabled' : null}"
+  name="field"
+/>
 
 <!-- th:attrappend adds to existing attribute -->
-<div class="card"
-     th:attrappend="class=${premium ? ' premium-card' : ''}">
-    Content
+<div class="card" th:attrappend="class=${premium ? ' premium-card' : ''}">
+  Content
 </div>
 
 <!-- Multiple attribute appends -->
-<input type="text"
-       th:attrappend="placeholder=${hasHint ? hintText : ''}
-                      class=${hasError ? 'error' : ''}" />
+<input
+  type="text"
+  th:attrappend="placeholder=${hasHint ? hintText : ''}
+                      class=${hasError ? 'error' : ''}"
+/>
 
 <!-- Data attribute conditional addition -->
-<div th:attrappend="data-config=${configJson ?: ''}"
-     th:attr="data-enabled=${isEnabled}">
-    Configurable Element
+<div
+  th:attrappend="data-config=${configJson ?: ''}"
+  th:attr="data-enabled=${isEnabled}"
+>
+  Configurable Element
 </div>
 ```
 
@@ -2037,14 +2145,16 @@ templates/
 ```html
 <!DOCTYPE html>
 <html>
-<head><title>Home</title></head>
-<body>
+  <head>
+    <title>Home</title>
+  </head>
+  <body>
     <h1 id="title">Welcome</h1>
     <p id="greeting">Hello!</p>
     <ul id="items">
-        <li class="item">Sample Item</li>
+      <li class="item">Sample Item</li>
     </ul>
-</body>
+  </body>
 </html>
 ```
 
@@ -2056,7 +2166,7 @@ templates/
         <h1 id="title" th:text="${pageTitle}"/>
         <p id="greeting" th:text="#{welcome.message}"/>
         <ul id="items">
-            <li class="item" th:each="item : ${items}" 
+            <li class="item" th:each="item : ${items}"
                 th:text="${item.name}" th:classappend="${item.featured ? 'featured' : ''}"/>
         </ul>
     </body>
@@ -2092,28 +2202,24 @@ spring.thymeleaf.servlet.content-type=text/html
 <!-- 1. Minimize heavy logic in templates -->
 <!-- Instead of complex calculations in template: -->
 <div th:with="discounted=${#numbers.formatDecimal(product.price * 0.9, 1, 2)}">
-    Price: $[[${discounted}]]
+  Price: $[[${discounted}]]
 </div>
 
 <!-- 2. Use th:remove for debug-only content -->
 <div th:remove="${production ? 'all' : 'none'}" class="debug-panel">
-    Debug information
+  Debug information
 </div>
 
 <!-- 3. Avoid deep nesting of th:each -->
 <!-- Inefficient: -->
 <div th:each="category : ${categories}">
-    <div th:each="product : ${category.products}">
-        <div th:each="variant : ${product.variants}">
-            [[${variant.name}]]
-        </div>
-    </div>
+  <div th:each="product : ${category.products}">
+    <div th:each="variant : ${product.variants}">[[${variant.name}]]</div>
+  </div>
 </div>
 
 <!-- Better: Flatten data in controller -->
-<div th:each="variant : ${flattenedVariants}">
-    [[${variant.name}]]
-</div>
+<div th:each="variant : ${flattenedVariants}">[[${variant.name}]]</div>
 
 <!-- 4. Use fragments wisely for reuse -->
 <th:block th:replace="~{fragments :: expensive-to-render-component}"></th:block>
@@ -2129,7 +2235,7 @@ spring.thymeleaf.servlet.content-type=text/html
 
 <!-- Default values in expressions -->
 <p th:text="${#strings.defaultString(message, 'No message available')}">
-    Default message
+  Default message
 </p>
 
 <!-- Safe navigation to avoid NPE -->
@@ -2137,18 +2243,19 @@ spring.thymeleaf.servlet.content-type=text/html
 
 <!-- Conditional rendering with fallback -->
 <div th:if="${data != null and not data.empty}">
-    <!-- Process data -->
+  <!-- Process data -->
 </div>
 <div th:unless="${data != null and not data.empty}">
-    <p class="empty-state">No data available</p>
+  <p class="empty-state">No data available</p>
 </div>
 
 <!-- Template-level error handling -->
 <div th:if="${#fields.hasErrors('global')}">
-    <div class="alert alert-danger">
-        <p th:each="error : ${#fields.errors('global')}" 
-           th:text="${error}">Global error</p>
-    </div>
+  <div class="alert alert-danger">
+    <p th:each="error : ${#fields.errors('global')}" th:text="${error}">
+      Global error
+    </p>
+  </div>
 </div>
 ```
 
@@ -2157,7 +2264,7 @@ spring.thymeleaf.servlet.content-type=text/html
 ```java
 @ControllerAdvice
 public class TemplateExceptionHandler {
-    
+
     @ExceptionHandler(TemplateProcessingException.class)
     public String handleTemplateError(Model model, Exception ex) {
         model.addAttribute("errorMessage", "Template processing failed");
@@ -2174,23 +2281,25 @@ public class TemplateExceptionHandler {
 ```html
 <!-- Proper label association -->
 <div class="form-group">
-    <label for="usernameInput" th:text="#{form.username}">Username</label>
-    <input type="text" 
-           th:id="'usernameInput'" 
-           th:field="*{username}"
-           th:attr="aria-describedby='usernameHelp'"
-           aria-required="true" />
-    <small id="usernameHelp" class="form-text">
-        [[#{form.username.help}]]
-    </small>
+  <label for="usernameInput" th:text="#{form.username}">Username</label>
+  <input
+    type="text"
+    th:id="'usernameInput'"
+    th:field="*{username}"
+    th:attr="aria-describedby='usernameHelp'"
+    aria-required="true"
+  />
+  <small id="usernameHelp" class="form-text"> [[#{form.username.help}]] </small>
 </div>
 
 <!-- ARIA attributes with Thymeleaf -->
-<button type="button"
-        th:attr="aria-expanded=${isExpanded ? 'true' : 'false'},
+<button
+  type="button"
+  th:attr="aria-expanded=${isExpanded ? 'true' : 'false'},
                 data-item-id=${item.id}"
-        class="toggle-btn">
-    [[${isExpanded ? 'Collapse' : 'Expand'}]]
+  class="toggle-btn"
+>
+  [[${isExpanded ? 'Collapse' : 'Expand'}]]
 </button>
 
 <!-- Bind event in a separate JS file (CSP-safe): -->
@@ -2203,24 +2312,28 @@ public class TemplateExceptionHandler {
 <span th:text="${currentPage}">1</span>
 
 <!-- Accessible error messages -->
-<div th:if="${#fields.hasErrors('email')}" 
-     role="alert" 
-     aria-live="polite">
-    <span th:errors="*{email}" class="error-message"></span>
+<div th:if="${#fields.hasErrors('email')}" role="alert" aria-live="polite">
+  <span th:errors="*{email}" class="error-message"></span>
 </div>
 
 <!-- Semantic HTML with Thymeleaf -->
-<nav th:fragment="main-navigation" role="navigation" aria-label="Main Navigation">
-    <ul>
-        <li th:each="item : ${navItems}">
-            <a th:href="@{${item.url}}" 
-               th:text="${item.label}"
-               th:classappend="${item.current ? 'active' : ''}"
-               th:attr="aria-current=${item.current ? 'page' : null}">
-                Link
-            </a>
-        </li>
-    </ul>
+<nav
+  th:fragment="main-navigation"
+  role="navigation"
+  aria-label="Main Navigation"
+>
+  <ul>
+    <li th:each="item : ${navItems}">
+      <a
+        th:href="@{${item.url}}"
+        th:text="${item.label}"
+        th:classappend="${item.current ? 'active' : ''}"
+        th:attr="aria-current=${item.current ? 'page' : null}"
+      >
+        Link
+      </a>
+    </li>
+  </ul>
 </nav>
 ```
 
@@ -2228,38 +2341,40 @@ public class TemplateExceptionHandler {
 
 **Common Issues and Solutions**
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| **Template not found** | Wrong path or suffix | Check `spring.thymeleaf.prefix` and `.suffix` |
-| **Expressions not evaluated** | Missing `th:` namespace | Add `xmlns:th="http://www.thymeleaf.org"` |
-| **NullPointerException** | Missing null checks | Use `?.` safe navigation or `th:if` |
-| **CSRF token missing** | Form without `th:action` | Add `th:action` or manually include CSRF token |
-| **Fragment not rendering** | Wrong fragment reference | Check fragment name and file location |
-| **Cached template changes** | Caching enabled in dev | Set `spring.thymeleaf.cache=false` |
-| **Encoding issues** | Wrong charset | Set `spring.thymeleaf.encoding=UTF-8` |
-| **SpEL not working** | Missing Spring context | Ensure `@Controller` returns view name |
+| Issue                         | Cause                    | Solution                                       |
+| ----------------------------- | ------------------------ | ---------------------------------------------- |
+| **Template not found**        | Wrong path or suffix     | Check `spring.thymeleaf.prefix` and `.suffix`  |
+| **Expressions not evaluated** | Missing `th:` namespace  | Add `xmlns:th="http://www.thymeleaf.org"`      |
+| **NullPointerException**      | Missing null checks      | Use `?.` safe navigation or `th:if`            |
+| **CSRF token missing**        | Form without `th:action` | Add `th:action` or manually include CSRF token |
+| **Fragment not rendering**    | Wrong fragment reference | Check fragment name and file location          |
+| **Cached template changes**   | Caching enabled in dev   | Set `spring.thymeleaf.cache=false`             |
+| **Encoding issues**           | Wrong charset            | Set `spring.thymeleaf.encoding=UTF-8`          |
+| **SpEL not working**          | Missing Spring context   | Ensure `@Controller` returns view name         |
 
 **Debugging Techniques**
 
 ```html
 <!-- 1. Debug output in templates -->
 <div th:if="${debugMode}">
-    <pre th:text="${#strings.toString(#ctx)}">Context</pre>
-    <pre th:text="${#strings.toString(#vars)}">Variables</pre>
+  <pre th:text="${#strings.toString(#ctx)}">Context</pre>
+  <pre th:text="${#strings.toString(#vars)}">Variables</pre>
 </div>
 
 <!-- 2. Temporary debug attributes -->
-<div th:attr="data-debug-id=${item.id}"
-     data-debug-type="[[${item.getClass().getSimpleName()}]]">
-    Content
+<div
+  th:attr="data-debug-id=${item.id}"
+  data-debug-type="[[${item.getClass().getSimpleName()}]]"
+>
+  Content
 </div>
 
 <!-- 3. Conditional logging -->
 <script th:inline="javascript">
-    console.debug('User object:', [[${user}]]);
-    /*[[# th:if="${debugMode}"]]*/
-    console.debug('Debug mode enabled');
-    /*[[/]]*/
+  console.debug('User object:', [[${user}]]);
+  /*[[# th:if="${debugMode}"]]*/
+  console.debug('Debug mode enabled');
+  /*[[/]]*/
 </script>
 
 <!-- 4. Template validation -->
@@ -2284,109 +2399,115 @@ logging.level.org.thymeleaf=DEBUG
 
 ### 16.1 Most Common Processors
 
-| Processor | Purpose |
-|---|---|
-| `th:text` | Set element text content (HTML-escaped). |
-| `th:utext` | Set element text content (unescaped HTML). |
-| `th:value` | Set the `value` attribute of an element. |
-| `th:if` | Conditionally render an element. |
-| `th:unless` | Render an element if condition is false. |
-| `th:each` | Iterate over a collection. |
-| `th:switch` / `th:case` | Switch-case conditional rendering. |
-| `th:href` | Set `href` attribute with Spring context path. |
-| `th:src` | Set `src` attribute with Spring context path. |
-| `th:action` | Set form action with CSRF auto-inclusion. |
-| `th:object` | Bind a form to a model attribute. |
-| `th:field` | Bind an input element to a model property. |
-| `th:errors` | Display validation errors for a field. |
-| `th:fragment` | Define a reusable fragment. |
-| `th:replace` | Replace an element with a fragment. |
-| `th:insert` | Insert a fragment inside an element. |
-| `th:remove` | Remove an element (`all`, `tag`, `body`, etc.). |
-| `th:block` | Virtual wrapper element — applies processors without outputting a tag. |
-| `th:with` | Define local variables. |
-| `th:classappend` | Append CSS classes dynamically. |
-| `th:inline` | Enable inline processing (`text`, `javascript`). |
+| Processor               | Purpose                                                                |
+| ----------------------- | ---------------------------------------------------------------------- |
+| `th:text`               | Set element text content (HTML-escaped).                               |
+| `th:utext`              | Set element text content (unescaped HTML).                             |
+| `th:value`              | Set the `value` attribute of an element.                               |
+| `th:if`                 | Conditionally render an element.                                       |
+| `th:unless`             | Render an element if condition is false.                               |
+| `th:each`               | Iterate over a collection.                                             |
+| `th:switch` / `th:case` | Switch-case conditional rendering.                                     |
+| `th:href`               | Set `href` attribute with Spring context path.                         |
+| `th:src`                | Set `src` attribute with Spring context path.                          |
+| `th:action`             | Set form action with CSRF auto-inclusion.                              |
+| `th:object`             | Bind a form to a model attribute.                                      |
+| `th:field`              | Bind an input element to a model property.                             |
+| `th:errors`             | Display validation errors for a field.                                 |
+| `th:fragment`           | Define a reusable fragment.                                            |
+| `th:replace`            | Replace an element with a fragment.                                    |
+| `th:insert`             | Insert a fragment inside an element.                                   |
+| `th:remove`             | Remove an element (`all`, `tag`, `body`, etc.).                        |
+| `th:block`              | Virtual wrapper element — applies processors without outputting a tag. |
+| `th:with`               | Define local variables.                                                |
+| `th:classappend`        | Append CSS classes dynamically.                                        |
+| `th:inline`             | Enable inline processing (`text`, `javascript`).                       |
 
 ### 16.2 Expression Cheat Sheet
 
-| Expression | Purpose | Example |
-|---|---|---|
-| `${variable}` | Model attribute access | `th:text="${user.name}"` |
-| `#{key}` | i18n message | `th:text="#{app.title}"` |
-| `@{/path}` | URL with context path | `th:href="@{/login}"` |
-| `*{field}` | Selection variable | `th:field="*{username}"` |
-| `~{tmpl :: frag}` | Fragment expression | `th:replace="~{f :: nav}"` |
-| `\|literal\|` | Literal substitution | `th:text="\|Hi ${name}!\|"` |
-| `? :` | Ternary operator | `${x ? 'a' : 'b'}` |
-| `?:` | Elvis operator | `${value ?: 'default'}` |
-| `1..5` | Range | `th:each="i : ${1..5}"` |
-| `?.` | Safe navigation | `${user?.address?.city}` |
-| `#strings` | String utilities | `${#strings.isEmpty(str)}` |
-| `#dates` | Date formatting | `${#dates.format(date, 'dd/MM')}` |
+| Expression        | Purpose                | Example                           |
+| ----------------- | ---------------------- | --------------------------------- |
+| `${variable}`     | Model attribute access | `th:text="${user.name}"`          |
+| `#{key}`          | i18n message           | `th:text="#{app.title}"`          |
+| `@{/path}`        | URL with context path  | `th:href="@{/login}"`             |
+| `*{field}`        | Selection variable     | `th:field="*{username}"`          |
+| `~{tmpl :: frag}` | Fragment expression    | `th:replace="~{f :: nav}"`        |
+| `\|literal\|`     | Literal substitution   | `th:text="\|Hi ${name}!\|"`       |
+| `? :`             | Ternary operator       | `${x ? 'a' : 'b'}`                |
+| `?:`              | Elvis operator         | `${value ?: 'default'}`           |
+| `1..5`            | Range                  | `th:each="i : ${1..5}"`           |
+| `?.`              | Safe navigation        | `${user?.address?.city}`          |
+| `#strings`        | String utilities       | `${#strings.isEmpty(str)}`        |
+| `#dates`          | Date formatting        | `${#dates.format(date, 'dd/MM')}` |
 
 ### 16.3 Spring Security sec: Attributes
 
-| Attribute | Purpose |
-|---|---|
-| `sec:authorize` | Conditional rendering based on security rules. |
-| `sec:authorize-url` | Render only if user can access the given URL. |
-| `sec:authentication-name` | Display the authenticated username. |
-| `sec:authentication` | Access authenticated user properties. |
-| `sec:requires-channel` | Channel security (HTTPS enforcement). |
+| Attribute                 | Purpose                                        |
+| ------------------------- | ---------------------------------------------- |
+| `sec:authorize`           | Conditional rendering based on security rules. |
+| `sec:authorize-url`       | Render only if user can access the given URL.  |
+| `sec:authentication-name` | Display the authenticated username.            |
+| `sec:authentication`      | Access authenticated user properties.          |
+| `sec:requires-channel`    | Channel security (HTTPS enforcement).          |
 
 ---
 
 ## 17. Glossary
 
-| Term | Definition |
-|------|-----------|
-| **Dialect** | A set of processors that define Thymeleaf's behavior for a specific markup language. |
-| **Processor** | An attribute that modifies or generates content in a template (e.g., `th:text`, `th:each`). |
-| **Expression** | Code within `${...}`, `#{...}`, `@{...}`, etc. that Thymeleaf evaluates. |
-| **Fragment** | A reusable piece of template defined with `th:fragment`. |
-| **Model Attribute** | Data passed from controller to template via `Model.addAttribute()`. |
-| **Natural Templating** | Thymeleaf's ability to render templates as valid HTML in browsers without processing. |
-| **Template Resolution** | The process of finding and loading template files. |
-| **Utility Object** | Built-in objects like `#strings`, `#dates` that provide helper methods. |
-| **Selection Context** | The object selected by `th:object` for use with `*{...}` expressions. |
-| **Inline Processing** | Evaluating expressions directly in text using `[[...]]` syntax. |
+| Term                    | Definition                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------------- |
+| **Dialect**             | A set of processors that define Thymeleaf's behavior for a specific markup language.        |
+| **Processor**           | An attribute that modifies or generates content in a template (e.g., `th:text`, `th:each`). |
+| **Expression**          | Code within `${...}`, `#{...}`, `@{...}`, etc. that Thymeleaf evaluates.                    |
+| **Fragment**            | A reusable piece of template defined with `th:fragment`.                                    |
+| **Model Attribute**     | Data passed from controller to template via `Model.addAttribute()`.                         |
+| **Natural Templating**  | Thymeleaf's ability to render templates as valid HTML in browsers without processing.       |
+| **Template Resolution** | The process of finding and loading template files.                                          |
+| **Utility Object**      | Built-in objects like `#strings`, `#dates` that provide helper methods.                     |
+| **Selection Context**   | The object selected by `th:object` for use with `*{...}` expressions.                       |
+| **Inline Processing**   | Evaluating expressions directly in text using `[[...]]` syntax.                             |
 
 ---
 
 ## 18. Best Practices
 
 ### Template Organization
+
 1. **Use fragments** for reusable components (headers, footers, cards)
 2. **Separate concerns** - Keep logic in controllers, presentation in templates
 3. **Create a fragments directory** for shared components
 4. **Use layout dialects** for consistent page structure
 
 ### Performance
+
 1. **Enable caching in production** (`spring.thymeleaf.cache=true`)
 2. **Avoid complex logic in templates** - Move to controllers/services
 3. **Minimize nested iterations** (`th:each` inside `th:each`)
 4. **Use `th:remove`** for debug-only content
 
 ### Security
+
 1. **Prefer `th:text` over `th:utext`** to prevent XSS
 2. **Always use `th:action`** for CSRF protection
 3. **Validate user input** in controllers before templates
 4. **Use Spring Security dialect** for authorization checks
 
 ### Maintainability
+
 1. **Use meaningful fragment names** and organize by feature
 2. **Keep templates focused** - One template per view responsibility
 3. **Comment complex template logic** with `<!-- /* */ -->`
 4. **Use constants for repeated strings** via `@{}` or message properties
 
 ### Internationalization
+
 1. **Externalize all text** to message properties files
 2. **Provide fallback messages** in default properties file
 3. **Test with multiple locales** during development
 4. **Consider RTL languages** in CSS planning
 
 ### Accessibility
+
 1. **Use semantic HTML elements** with Thymeleaf
 2. **Include ARIA attributes** where appropriate
 3. **Ensure proper label associations** in forms
@@ -2397,7 +2518,9 @@ logging.level.org.thymeleaf=DEBUG
 ## 19. Troubleshooting FAQ
 
 ### Q1: Why is my Thymeleaf template not rendering?
+
 **A:** Check:
+
 - Template location: `src/main/resources/templates/`
 - File extension: `.html`
 - Controller returns correct view name
@@ -2405,62 +2528,80 @@ logging.level.org.thymeleaf=DEBUG
 - No caching in development: `spring.thymeleaf.cache=false`
 
 ### Q2: Why are my expressions `${...}` not evaluated?
+
 **A:** Ensure:
+
 - HTML has `xmlns:th="http://www.thymeleaf.org"`
 - Model attributes are correctly added in controller
 - Expression syntax is correct
 - No typos in attribute names
 
 ### Q3: How do I debug Thymeleaf templates?
+
 **A:** Use:
+
 - `th:attr="data-debug=value"` for attribute debugging
 - `<pre th:text="${#strings.toString(#vars)}">` to see all variables
 - Spring Boot DevTools for live reload
 - `logging.level.org.thymeleaf=DEBUG` in application.properties
 
 ### Q4: Why is my fragment not found?
+
 **A:** Verify:
+
 - Fragment file exists and is accessible
 - Fragment name matches exactly (case-sensitive)
 - Correct syntax: `~{file :: fragment}`
 - File is in template resolver's search path
 
 ### Q5: How to handle null values gracefully?
+
 **A:** Use:
+
 - Safe navigation: `user?.address?.city`
 - Elvis operator: `value ?: 'default'`
 - `th:if` conditions: `th:if="${value != null}"`
 - `#strings.defaultString(value, 'fallback')`
 
 ### Q6: CSRF token missing in forms?
+
 **A:** Solutions:
+
 - Use `th:action` instead of plain `action` attribute
 - Manually add: `<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />`
 - Ensure Spring Security is configured
 
 ### Q7: How to improve template performance?
+
 **A:** Optimize by:
+
 - Enabling cache in production
 - Reducing complex expressions in loops
 - Using fragments for repeated content
 - Flattening data structures in controller
 
 ### Q8: Internationalization not working?
+
 **A:** Check:
+
 - Message files in `src/main/resources/`
 - Correct naming: `messages_en.properties`
 - Locale resolver configuration
 - Message key references in templates
 
 ### Q9: Form binding not working?
+
 **A:** Verify:
+
 - `th:object` points to correct model attribute
 - `th:field` matches object property names
 - Form method matches controller expectation
 - No conflicting `name` attributes
 
 ### Q10: How to test Thymeleaf templates?
+
 **A:** Use:
+
 - `@SpringBootTest` with `@AutoConfigureMockMvc`
 - `mockMvc.perform()` for integration tests
 - `TestRestTemplate` for full stack testing
@@ -2468,4 +2609,170 @@ logging.level.org.thymeleaf=DEBUG
 
 ---
 
-*This comprehensive reference journal covers Thymeleaf 3.x with Spring Boot 3.x. For the latest updates, always check the official [Thymeleaf documentation](https://www.thymeleaf.org/documentation.html) and [Spring Boot reference](https://docs.spring.io/spring-boot/docs/current/reference/html/).*
+## 20. Thymeleaf Mental Models & Rendering Flow
+
+This section describes how Thymeleaf processes a template internally. A clear understanding of the processing lifecycle and execution order is essential for debugging and for writing predictable templates.
+
+### 20.1 Template Processing Lifecycle
+
+Thymeleaf processes templates in five distinct phases:
+
+1. **Template Parsing** — The HTML file is parsed into a tree structure. Syntax errors such as unclosed tags or malformed attributes cause failures at this stage. The template mode (HTML, XML, TEXT, JAVASCRIPT) is determined here.
+2. **Preprocessing** — `th:pre` expressions are evaluated before all other processors. This phase is used to dynamically generate other `th:*` attributes and is rarely needed outside of meta-programming scenarios.
+3. **Processor Execution** — All `th:*` attribute processors are executed. The order is deterministic but not strictly top-to-bottom. Structural processors (`th:each`, `th:if`, `th:replace`) may remove or duplicate nodes during this phase.
+4. **Expression Evaluation** — SpEL expressions (`${}`, `#{}`, `@{}`, `*{}`) are resolved against model attributes, Spring beans, and utility objects (`#strings`, `#lists`, etc.). Expressions are evaluated lazily where possible.
+5. **Output Rendering** — Escaping rules are applied (`th:text` vs `th:utext`), inline modes (HTML, JavaScript) finalize output, and the final HTML is written to the response.
+
+> 💡 **Note:** Thymeleaf operates as a tree transformation engine, not a line-by-line renderer. Processors act on the parsed template tree, which is why execution order does not always match the order elements appear in the source.
+
+### 20.2 Attribute Interaction Rules
+
+When multiple `th:*` attributes exist on the same element, they are executed in the following priority order:
+
+| Priority    | Category            | Processors                                   |
+| ----------- | ------------------- | -------------------------------------------- |
+| 1 (highest) | Structural          | `th:if`, `th:unless`, `th:each`, `th:remove` |
+| 2           | Attribute modifiers | `th:classappend`, `th:attr`, `th:href`       |
+| 3 (lowest)  | Output              | `th:text`, `th:utext`                        |
+
+```html
+<p
+  th:if="${user}"
+  th:classappend="${user.admin ? 'admin' : ''}"
+  th:text="${user.name}"
+></p>
+```
+
+If `user` is `null`, the element is removed entirely by `th:if` and no subsequent processors execute.
+
+### 20.3 Fragment Resolution
+
+Fragments behave as DOM replacements, not traditional server-side includes. The key distinctions are:
+
+- `th:insert` — the fragment becomes child content of the host tag.
+- `th:replace` — the fragment replaces the entire host tag.
+- Fragment parameters are passed by value, analogous to function arguments.
+- Fragment expressions are evaluated before the fragment is rendered.
+
+```html
+<!-- The fragment 'card' is resolved, rendered with the given arguments,
+     and the output replaces this <div> entirely. -->
+<div th:replace="~{layout :: card(${title}, ${body})}"></div>
+```
+
+---
+
+## 21. Debugging & Diagnostics Guide
+
+This section covers the most common runtime errors encountered during Thymeleaf template development and the techniques used to diagnose them.
+
+### 21.1 Common Runtime Errors & Their Causes
+
+| Error                                       | Cause                                                                                                                                 | Resolution                                                                                                              |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `Exception evaluating SpringEL expression`  | A model attribute is missing, a property does not exist, or a null value was dereferenced.                                            | Use safe navigation (`user?.name`), or guard with `th:if="${user}"` before accessing properties.                        |
+| Template renders but shows placeholder text | The template was opened directly in a browser, or a `th:` attribute was misspelled (e.g., `th-text` instead of `th:text`).            | Verify the attribute uses a colon separator and that the template is served through Spring MVC.                         |
+| Fragment not found                          | The fragment name is wrong, the `~{}` syntax is missing, or the template file is not in the resolver's search path.                   | Confirm the fragment name is an exact, case-sensitive match and that the file is under `src/main/resources/templates/`. |
+| Unexpected empty output                     | `th:if` evaluated to false, the collection was empty (see Section 6.3 truth rules), or `th:remove="all"` was applied unintentionally. | Add temporary debug output (see 21.2) to confirm the value of the controlling expression.                               |
+
+### 21.2 Debugging Techniques
+
+**Temporary output probing** — Render a model object directly to confirm it exists and inspect its value:
+
+```html
+<p th:text="${user}">DEBUG</p>
+<p th:text="${#objects.toString(user, 'NULL')}">DEBUG</p>
+```
+
+**Disable template caching** — Cached templates do not reflect source changes until the cache is invalidated. Always disable caching during development:
+
+```properties
+spring.thymeleaf.cache=false
+```
+
+**Enable Thymeleaf logging** — DEBUG-level logs cover template resolution, fragment lookups, and cache behaviour:
+
+```properties
+logging.level.org.thymeleaf=DEBUG
+logging.level.org.thymeleaf.templateresolver=TRACE
+```
+
+---
+
+## 22. Performance & Design Tradeoffs
+
+This section covers the key decisions that affect template rendering performance and how to divide responsibility between controllers and templates.
+
+### 22.1 What to Compute in Controllers vs Templates
+
+Controllers should prepare data; templates should display it. Compute a value in the controller when it is reused multiple times, when the logic is complex or conditional-heavy, when formatting is non-trivial, or when a service call is required.
+
+```java
+model.addAttribute("displayPrice", priceService.format(price));
+```
+
+Keep logic in templates only for simple conditionals, straightforward formatting with utility objects such as `#numbers` or `#dates`, and minor string composition. Avoid calling service methods or repeating expensive expressions inside `th:each` loops — cache derived values with `th:with` instead:
+
+```html
+<!-- Cache a computed value to avoid repeated evaluation inside a loop -->
+<div th:each="order : ${orders}" th:with="total=${order.getTotal()}">
+  <span th:text="${total}"></span>
+</div>
+```
+
+### 22.2 Fragment & Layout Performance
+
+| Technique             | Tradeoff                                                             |
+| --------------------- | -------------------------------------------------------------------- |
+| Manual layouts        | Fastest rendering; more boilerplate to maintain.                     |
+| Layout Dialect        | Cleaner page structure; slightly higher processing cost per request. |
+| Deep fragment nesting | More modular and readable; higher cumulative rendering cost.         |
+
+> 💡 **Note:** Prefer fewer, larger fragments over many small ones. Each fragment resolution adds a small amount of overhead during template processing.
+
+---
+
+## 23. Testing Thymeleaf Templates
+
+Thymeleaf templates are tested by asserting on the rendered HTML output. `@WebMvcTest` with `MockMvc` is the standard approach in Spring Boot; it loads only the web layer, making tests fast and focused.
+
+### 23.1 View-Level Testing with MockMvc
+
+Use `@WebMvcTest` to verify that a controller returns the correct view name and that expected content is present in the rendered output.
+
+```java
+@WebMvcTest(HomeController.class)
+class HomeViewTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void rendersHomePage() throws Exception {
+        mockMvc.perform(get("/"))
+               .andExpect(status().isOk())
+               .andExpect(view().name("index"))
+               .andExpect(content().string(containsString("Welcome")));
+    }
+}
+```
+
+### 23.2 Testing Conditional Rendering
+
+Verify that elements controlled by `th:if`, `sec:authorize`, or similar processors are present or absent based on the application state.
+
+```java
+@Test
+void hidesAdminLinkForRegularUsers() throws Exception {
+    mockMvc.perform(get("/dashboard"))
+           .andExpect(content().string(not(containsString("Admin Panel"))));
+}
+```
+
+### 23.3 Testing Fragments & Layouts
+
+Test the fully rendered page output rather than individual fragments in isolation. Assert that known layout elements such as the navigation bar or footer are present in every page that uses the shared layout. Avoid snapshot-style tests that compare against a full HTML string — they tend to break on unrelated changes and obscure the actual assertion.
+
+---
+
+_This comprehensive reference journal covers Thymeleaf 3.x with Spring Boot 3.x. Templates should remain focused on presentation; when a template becomes difficult to read or maintain, it is a sign that logic has drifted into the view and belongs in the controller or a service layer. For the latest updates, always check the official [Thymeleaf documentation](https://www.thymeleaf.org/documentation.html) and [Spring Boot reference](https://docs.spring.io/spring-boot/docs/current/reference/html/)._
