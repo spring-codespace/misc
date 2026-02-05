@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Table Ordering System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header with table info */
+        .header {
+            background: linear-gradient(to right, #1a472a, #2e8b57);
+            color: white;
+            padding: 1.5rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .logo i {
+            color: #f5c518;
+        }
+        
+        .table-info {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .table-info i {
+            font-size: 1.2rem;
+        }
+        
+        /* Tabs Navigation */
+        .tabs {
+            display: flex;
+            background-color: white;
+            margin: 2rem 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .tab.active {
+            background-color: #1a472a;
+            color: white;
+        }
+        
+        .tab:hover:not(.active) {
+            background-color: #f0f0f0;
+        }
+        
+        .tab-notification {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background-color: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Menu Page */
+        .page-title {
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            border-bottom: 2px solid #f5c518;
+            padding-bottom: 0.5rem;
+        }
+        
+        .category {
+            margin-bottom: 2.5rem;
+        }
+        
+        .category h3 {
+            color: #1a472a;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .menu-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .menu-item {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+        }
+        
+        .item-image {
+            height: 180px;
+            width: 100%;
+            object-fit: cover;
+        }
+        
+        .item-details {
+            padding: 1.2rem;
+        }
+        
+        .item-name {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+        
+        .item-desc {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        
+        .item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .item-price {
+            font-weight: 700;
+            color: #1a472a;
+            font-size: 1.3rem;
+        }
+        
+        .item-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: #1a472a;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2e8b57;
+        }
+        
+        .btn-secondary {
+            background-color: #f5c518;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #e6b800;
+        }
+        
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .quantity-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #f0f0f0;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .quantity-btn:hover {
+            background-color: #ddd;
+        }
+        
+        .quantity {
+            font-weight: 600;
+            min-width: 30px;
+            text-align: center;
+        }
+        
+        /* Cart Page */
+        .cart-items {
+            margin-bottom: 2rem;
+        }
+        
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: white;
+            padding: 1.2rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .cart-item-info {
+            flex: 1;
+        }
+        
+        .cart-item-name {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+        
+        .cart-item-price {
+            color: #1a472a;
+            font-weight: 600;
+        }
+        
+        .cart-item-total {
+            font-weight: 700;
+            color: #2c3e50;
+            min-width: 80px;
+            text-align: right;
+        }
+        
+        .cart-summary {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .summary-row.total {
+            font-weight: 700;
+            font-size: 1.2rem;
+            border-bottom: none;
+            color: #1a472a;
+        }
+        
+        .empty-cart {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+        
+        .empty-cart i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #ddd;
+        }
+        
+        .order-btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+            margin-top: 1.5rem;
+        }
+        
+        /* Payment Page */
+        .payment-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+        
+        .payment-methods {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .payment-method {
+            flex: 1;
+            text-align: center;
+            padding: 1.5rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .payment-method.selected {
+            border-color: #1a472a;
+            background-color: rgba(26, 71, 42, 0.05);
+        }
+        
+        .payment-method i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+        
+        .payment-form {
+            display: none;
+        }
+        
+        .payment-form.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        /* Order Status Page */
+        .order-status-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+        
+        .order-details {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .order-detail-row {
+            display: flex;
+            margin-bottom: 0.5rem;
+        }
+        
+        .order-detail-label {
+            font-weight: 600;
+            min-width: 150px;
+            color: #2c3e50;
+        }
+        
+        .order-status-tracker {
+            margin: 2rem 0;
+        }
+        
+        .status-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        
+        .status-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 40px;
+            width: 2px;
+            height: calc(100% + 1rem);
+            background-color: #ddd;
+            z-index: 1;
+        }
+        
+        .status-step.completed:not(:last-child)::after {
+            background-color: #1a472a;
+        }
+        
+        .status-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1.5rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .status-step.completed .status-icon {
+            background-color: #1a472a;
+            color: white;
+        }
+        
+        .status-step.active .status-icon {
+            background-color: #f5c518;
+            color: #333;
+        }
+        
+        .status-info {
+            flex: 1;
+        }
+        
+        .status-title {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+        
+        .status-time {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .kitchen-notification {
+            background-color: #fff8e1;
+            border-left: 4px solid #f5c518;
+            padding: 1rem;
+            margin-top: 2rem;
+            border-radius: 4px;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 3rem;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+        
+        /* QR Code Modal */
+        .qr-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .qr-modal.active {
+            display: flex;
+        }
+        
+        .qr-modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        .qr-code {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background-color: white;
+            display: inline-block;
+            border: 1px solid #ddd;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: white;
+            cursor: pointer;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .menu-items {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+            
+            .cart-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .cart-item-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .cart-item-total {
+                text-align: left;
+            }
+            
+            .payment-methods {
+                flex-direction: column;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- QR Code Modal (for demonstration) -->
+    <div class="qr-modal" id="qrModal">
+        <button class="close-modal" id="closeModal">&times;</button>
+        <div class="qr-modal-content">
+            <h2>Table QR Code</h2>
+            <p>Scan this QR code to access the menu for Table 12</p>
+            <div class="qr-code">
+                <!-- Simple QR code representation -->
+                <div style="width: 200px; height: 200px; background-color: #333; margin: 0 auto; position: relative;">
+                    <div style="position: absolute; width: 40px; height: 40px; background-color: white; top: 20px; left: 20px;"></div>
+                    <div style="position: absolute; width: 40px; height: 40px; background-color: white; top: 20px; right: 20px;"></div>
+                    <div style="position: absolute; width: 40px; height: 40px; background-color: white; bottom: 20px; left: 20px;"></div>
+                    <div style="position: absolute; width: 10px; height: 10px; background-color: white; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+                </div>
+            </div>
+            <p><small>Or click "Enter as Customer" below to simulate scanning</small></p>
+            <button class="btn btn-primary" id="enterAsCustomer">Enter as Customer</button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="app-container" id="appContainer" style="display: none;">
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-utensils"></i>
+                        <span>Bella Vista Restaurant</span>
+                    </div>
+                    <div class="table-info">
+                        <i class="fas fa-qrcode"></i>
+                        <div>
+                            <div>Table <strong id="tableNumber">12</strong></div>
+                            <div style="font-size: 0.8rem;">Lunch Menu</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <main class="container">
+            <div class="tabs">
+                <div class="tab active" data-tab="menu">
+                    Menu
+                </div>
+                <div class="tab" data-tab="cart">
+                    Cart <span class="tab-notification" id="cartNotification">0</span>
+                </div>
+                <div class="tab" data-tab="payment">
+                    Payment
+                </div>
+                <div class="tab" data-tab="status">
+                    Order Status <span class="tab-notification" id="statusNotification" style="display: none;">!</span>
+                </div>
+            </div>
+            
+            <!-- Menu Tab -->
+            <div id="menu" class="tab-content active">
+                <h2 class="page-title">Lunch Menu</h2>
+                
+                <div class="category">
+                    <h3>Appetizers</h3>
+                    <div class="menu-items" id="appetizers">
+                        <!-- Appetizer items will be generated by JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="category">
+                    <h3>Main Courses</h3>
+                    <div class="menu-items" id="main-courses">
+                        <!-- Main course items will be generated by JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="category">
+                    <h3>Desserts</h3>
+                    <div class="menu-items" id="desserts">
+                        <!-- Dessert items will be generated by JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="category">
+                    <h3>Drinks</h3>
+                    <div class="menu-items" id="drinks">
+                        <!-- Drink items will be generated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cart Tab -->
+            <div id="cart" class="tab-content">
+                <h2 class="page-title">Your Order</h2>
+                
+                <div class="cart-items" id="cart-items-container">
+                    <!-- Cart items will be generated by JavaScript -->
+                </div>
+                
+                <div class="cart-summary">
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Tax (8%)</span>
+                        <span id="tax">$0.00</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total</span>
+                        <span id="total">$0.00</span>
+                    </div>
+                    
+                    <button class="btn btn-primary order-btn" id="proceedToPayment">Proceed to Payment</button>
+                </div>
+            </div>
+            
+            <!-- Payment Tab -->
+            <div id="payment" class="tab-content">
+                <h2 class="page-title">Payment</h2>
+                
+                <div class="payment-container">
+                    <div class="payment-methods">
+                        <div class="payment-method" data-method="card">
+                            <i class="fas fa-credit-card"></i>
+                            <div>Credit/Debit Card</div>
+                        </div>
+                        <div class="payment-method" data-method="digital">
+                            <i class="fas fa-mobile-alt"></i>
+                            <div>Digital Wallet</div>
+                        </div>
+                        <div class="payment-method" data-method="cash">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <div>Pay at Counter</div>
+                        </div>
+                    </div>
+                    
+                    <div class="payment-form active" id="cardForm">
+                        <h3>Card Details</h3>
+                        <div class="form-group">
+                            <label for="cardName">Name on Card</label>
+                            <input type="text" id="cardName" placeholder="John Smith">
+                        </div>
+                        <div class="form-group">
+                            <label for="cardNumber">Card Number</label>
+                            <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="expiryDate">Expiry Date</label>
+                                <input type="text" id="expiryDate" placeholder="MM/YY">
+                            </div>
+                            <div class="form-group">
+                                <label for="cvv">CVV</label>
+                                <input type="text" id="cvv" placeholder="123">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="payment-form" id="digitalForm">
+                        <h3>Digital Wallet</h3>
+                        <p>Scan the QR code below with your mobile wallet app to pay</p>
+                        <div class="qr-code" style="width: 150px; height: 150px; margin: 1rem auto; background-color: #333;"></div>
+                    </div>
+                    
+                    <div class="payment-form" id="cashForm">
+                        <h3>Pay at Counter</h3>
+                        <p>You can pay at the restaurant counter when your order is ready.</p>
+                        <p>Your order will be prepared once you confirm.</p>
+                    </div>
+                    
+                    <button class="btn btn-primary order-btn" id="placeOrderBtn">Place Order</button>
+                </div>
+            </div>
+            
+            <!-- Order Status Tab -->
+            <div id="status" class="tab-content">
+                <h2 class="page-title">Order Status</h2>
+                
+                <div class="order-status-container">
+                    <div class="order-details">
+                        <h3>Order #<span id="orderId">0000</span></h3>
+                        <div class="order-detail-row">
+                            <div class="order-detail-label">Table:</div>
+                            <div>Table <span id="statusTableNumber">12</span></div>
+                        </div>
+                        <div class="order-detail-row">
+                            <div class="order-detail-label">Order Time:</div>
+                            <div id="orderTime">2:45 PM</div>
+                        </div>
+                        <div class="order-detail-row">
+                            <div class="order-detail-label">Estimated Ready:</div>
+                            <div id="estimatedTime">3:15 PM</div>
+                        </div>
+                        <div class="order-detail-row">
+                            <div class="order-detail-label">Total Amount:</div>
+                            <div id="statusTotal">$0.00</div>
+                        </div>
+                    </div>
+                    
+                    <div class="order-status-tracker">
+                        <div class="status-step completed" id="stepOrdered">
+                            <div class="status-icon">
+                                <i class="fas fa-clipboard-check"></i>
+                            </div>
+                            <div class="status-info">
+                                <div class="status-title">Order Received</div>
+                                <div class="status-time" id="orderedTime">2:45 PM</div>
+                            </div>
+                        </div>
+                        
+                        <div class="status-step active" id="stepPreparing">
+                            <div class="status-icon">
+                                <i class="fas fa-utensils"></i>
+                            </div>
+                            <div class="status-info">
+                                <div class="status-title">Preparing</div>
+                                <div class="status-time">Chef is preparing your order</div>
+                            </div>
+                        </div>
+                        
+                        <div class="status-step" id="stepReady">
+                            <div class="status-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="status-info">
+                                <div class="status-title">Ready</div>
+                                <div class="status-time">Order ready for pickup</div>
+                            </div>
+                        </div>
+                        
+                        <div class="status-step" id="stepDelivered">
+                            <div class="status-icon">
+                                <i class="fas fa-concierge-bell"></i>
+                            </div>
+                            <div class="status-info">
+                                <div class="status-title">Delivered</div>
+                                <div class="status-time">Order delivered to your table</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="kitchen-notification">
+                        <i class="fas fa-info-circle"></i> Your order has been sent to the kitchen. The chef will update the status when ready.
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <div class="container">
+                <p>© 2023 Bella Vista Restaurant. All rights reserved.</p>
+                <p>123 Gourmet Street, Food City | Phone: (555) 123-4567</p>
+                <p><small>Scan the QR code at your table to access this menu</small></p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Menu data
+        const menuItems = {
+            appetizers: [
+                { id: 1, name: "Bruschetta", description: "Toasted bread topped with tomatoes, garlic, and fresh basil", price: 8.99, image: "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" },
+                { id: 2, name: "Garlic Bread", description: "Freshly baked bread with garlic butter and herbs", price: 6.99, image: "https://images.unsplash.com/photo-1621996346565-e3dbc353d2a5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" },
+                { id: 3, name: "Calamari", description: "Crispy fried squid served with marinara sauce", price: 12.99, image: "https://images.unsplash.com/photo-1563379091339-03246963d9d6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" },
+                { id: 4, name: "Caprese Salad", description: "Fresh mozzarella, tomatoes, and basil drizzled with balsamic glaze", price: 10.99, image: "https://images.unsplash.com/photo-1592417817098-8fd3d9cb14a0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" }
+            ],
+            mainCourses: [
+                { id: 5, name: "Spaghetti Carbonara", description: "Classic pasta with eggs, cheese, pancetta, and black pepper", price: 16.99, image: "https://images.unsplash.com/photo-1621996346565-e3dbc353d2a5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" },
+                { id: 6, name: "Grilled Salmon", description: "Atlantic salmon with lemon butter sauce and seasonal vegetables", price: 22.99, image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" },
+                { id: 7, name: "Beef Burger", description: "1/2 lb beef patty with lettuce, tomato, onion, and special sauce", price: 14.99, image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" },
+                { id: 8, name: "Chicken Alfredo", description: "Grilled chicken breast with fettuccine pasta in creamy alfredo sauce", price: 18.99, image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" }
+            ],
+            desserts: [
+                { id: 9, name: "Tiramisu", description: "Classic Italian dessert with coffee-soaked ladyfingers and mascarpone", price: 8.99, image: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" },
+                { id: 10, name: "Chocolate Lava Cake", description: "Warm chocolate cake with a molten center, served with vanilla ice cream", price: 9.99, image: "https://images.unsplash.com/photo-1624353365286-3f8d62dadadf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" },
+                { id: 11, name: "Cheesecake", description: "New York style cheesecake with strawberry topping", price: 7.99, image: "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" }
+            ],
+            drinks: [
+                { id: 12, name: "Soft Drinks", description: "Coke, Diet Coke, Sprite, or Lemonade", price: 2.99, image: "https://images.unsplash.com/photo-1624517452488-04869289c4ca?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" },
+                { id: 13, name: "Fresh Orange Juice", description: "Freshly squeezed orange juice", price: 4.99, image: "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" },
+                { id: 14, name: "Iced Tea", description: "Freshly brewed iced tea with lemon", price: 3.99, image: "https://images.unsplash.com/photo-1594810204151-d1f6c8d754d3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" },
+                { id: 15, name: "Coffee", description: "Freshly brewed coffee", price: 2.99, image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" }
+            ]
+        };
+
+        // Application state
+        let cart = [];
+        let currentOrder = null;
+        let orderStatus = null;
+        let tableNumber = 12; // Default table number
+        const taxRate = 0.08;
+
+        // DOM Elements
+        const qrModal = document.getElementById('qrModal');
+        const appContainer = document.getElementById('appContainer');
+        const closeModal = document.getElementById('closeModal');
+        const enterAsCustomer = document.getElementById('enterAsCustomer');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const cartNotification = document.getElementById('cartNotification');
+        const statusNotification = document.getElementById('statusNotification');
+        const tableNumberElement = document.getElementById('tableNumber');
+        const statusTableNumber = document.getElementById('statusTableNumber');
+        const cartItemsContainer = document.getElementById('cart-items-container');
+        const subtotalElement = document.getElementById('subtotal');
+        const taxElement = document.getElementById('tax');
+        const totalElement = document.getElementById('total');
+        const proceedToPayment = document.getElementById('proceedToPayment');
+        const paymentMethods = document.querySelectorAll('.payment-method');
+        const paymentForms = document.querySelectorAll('.payment-form');
+        const placeOrderBtn = document.getElementById('placeOrderBtn');
+        const orderIdElement = document.getElementById('orderId');
+        const orderTimeElement = document.getElementById('orderTime');
+        const estimatedTimeElement = document.getElementById('estimatedTime');
+        const statusTotalElement = document.getElementById('statusTotal');
+        const orderedTimeElement = document.getElementById('orderedTime');
+        const statusSteps = {
+            ordered: document.getElementById('stepOrdered'),
+            preparing: document.getElementById('stepPreparing'),
+            ready: document.getElementById('stepReady'),
+            delivered: document.getElementById('stepDelivered')
+        };
+
+        // Initialize the application
+        function init() {
+            // Show QR modal first (simulating scanning)
+            qrModal.classList.add('active');
+            
+            // Check if there's an existing order in localStorage
+            const savedOrder = localStorage.getItem('table12_order');
+            if (savedOrder) {
+                currentOrder = JSON.parse(savedOrder);
+                orderStatus = currentOrder.status;
+                cart = currentOrder.items || [];
+                updateCart();
+                updateMenuItems();
+                
+                // If there's an active order, show status notification
+                if (orderStatus !== 'delivered') {
+                    statusNotification.style.display = 'flex';
+                }
+                
+                // Update status display if needed
+                if (orderStatus) {
+                    updateOrderStatusDisplay();
+                }
+            }
+            
+            // Load menu
+            initializeMenu();
+            
+            // Set up event listeners
+            setupEventListeners();
+        }
+
+        // Initialize the menu
+        function initializeMenu() {
+            for (const category in menuItems) {
+                const container = document.getElementById(category);
+                if (!container) continue;
+                
+                container.innerHTML = '';
+                
+                menuItems[category].forEach(item => {
+                    const itemElement = createMenuItemElement(item);
+                    container.appendChild(itemElement);
+                });
+            }
+        }
+
+        // Create a menu item element
+        function createMenuItemElement(item) {
+            const div = document.createElement('div');
+            div.className = 'menu-item';
+            div.innerHTML = `
+                <img src="${item.image}" alt="${item.name}" class="item-image">
+                <div class="item-details">
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-desc">${item.description}</div>
+                    <div class="item-footer">
+                        <div class="item-price">$${item.price.toFixed(2)}</div>
+                        <div class="item-actions">
+                            ${getItemActionButton(item.id)}
+                        </div>
+                    </div>
+                </div>
+            `;
+            return div;
+        }
+
+        // Get the appropriate action button for a menu item
+        function getItemActionButton(itemId) {
+            const cartItem = cart.find(item => item.id === itemId);
+            
+            if (cartItem) {
+                return `
+                    <div class="quantity-control">
+                        <button class="quantity-btn" onclick="decreaseQuantity(${itemId})">-</button>
+                        <span class="quantity">${cartItem.quantity}</span>
+                        <button class="quantity-btn" onclick="increaseQuantity(${itemId})">+</button>
+                    </div>
+                `;
+            } else {
+                return `<button class="btn btn-primary" onclick="addToCart(${itemId})">Add to Cart</button>`;
+            }
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // QR modal
+            closeModal.addEventListener('click', () => {
+                qrModal.classList.remove('active');
+            });
+            
+            enterAsCustomer.addEventListener('click', () => {
+                qrModal.classList.remove('active');
+                appContainer.style.display = 'block';
+                tableNumberElement.textContent = tableNumber;
+                statusTableNumber.textContent = tableNumber;
+            });
+            
+            // Tab navigation
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+                    
+                    // Update active tab
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Show active content
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Payment method selection
+            paymentMethods.forEach(method => {
+                method.addEventListener('click', () => {
+                    // Update selected payment method
+                    paymentMethods.forEach(m => m.classList.remove('selected'));
+                    method.classList.add('selected');
+                    
+                    // Show corresponding form
+                    const methodType = method.getAttribute('data-method');
+                    paymentForms.forEach(form => form.classList.remove('active'));
+                    document.getElementById(`${methodType}Form`).classList.add('active');
+                });
+            });
+            
+            // Proceed to payment button
+            proceedToPayment.addEventListener('click', () => {
+                if (cart.length === 0) {
+                    alert('Your cart is empty. Please add items before proceeding to payment.');
+                    return;
+                }
+                
+                // Switch to payment tab
+                tabs.forEach(t => t.classList.remove('active'));
+                document.querySelector('.tab[data-tab="payment"]').classList.add('active');
+                
+                tabContents.forEach(content => content.classList.remove('active'));
+                document.getElementById('payment').classList.add('active');
+            });
+            
+            // Place order button
+            placeOrderBtn.addEventListener('click', () => {
+                if (cart.length === 0) {
+                    alert('Your cart is empty. Please add items before placing an order.');
+                    return;
+                }
+                
+                // Create order
+                createOrder();
+                
+                // Switch to status tab
+                tabs.forEach(t => t.classList.remove('active'));
+                document.querySelector('.tab[data-tab="status"]').classList.add('active');
+                
+                tabContents.forEach(content => content.classList.remove('active'));
+                document.getElementById('status').classList.add('active');
+                
+                // Show notification on status tab
+                statusNotification.style.display = 'flex';
+            });
+        }
+
+        // Add item to cart
+        function addToCart(itemId) {
+            let item = null;
+            
+            // Find the item in menuItems
+            for (const cat in menuItems) {
+                const foundItem = menuItems[cat].find(menuItem => menuItem.id === itemId);
+                if (foundItem) {
+                    item = foundItem;
+                    break;
+                }
+            }
+            
+            if (!item) return;
+            
+            // Check if item is already in cart
+            const existingItem = cart.find(cartItem => cartItem.id === itemId);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    ...item,
+                    quantity: 1
+                });
+            }
+            
+            updateCart();
+            updateMenuItems();
+        }
+
+        // Increase item quantity
+        function increaseQuantity(itemId) {
+            const item = cart.find(item => item.id === itemId);
+            if (item) {
+                item.quantity += 1;
+                updateCart();
+                updateMenuItems();
+            }
+        }
+
+        // Decrease item quantity
+        function decreaseQuantity(itemId) {
+            const itemIndex = cart.findIndex(item => item.id === itemId);
+            if (itemIndex !== -1) {
+                if (cart[itemIndex].quantity > 1) {
+                    cart[itemIndex].quantity -= 1;
+                } else {
+                    cart.splice(itemIndex, 1);
+                }
+                updateCart();
+                updateMenuItems();
+            }
+        }
+
+        // Remove item from cart
+        function removeFromCart(itemId) {
+            const itemIndex = cart.findIndex(item => item.id === itemId);
+            if (itemIndex !== -1) {
+                cart.splice(itemIndex, 1);
+                updateCart();
+                updateMenuItems();
+            }
+        }
+
+        // Update cart display
+        function updateCart() {
+            // Update cart notification
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            cartNotification.textContent = totalItems;
+            
+            // Update cart items
+            cartItemsContainer.innerHTML = '';
+            
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = `
+                    <div class="empty-cart">
+                        <i class="fas fa-shopping-cart"></i>
+                        <h3>Your cart is empty</h3>
+                        <p>Add some delicious items from our menu!</p>
+                    </div>
+                `;
+            } else {
+                cart.forEach(item => {
+                    const itemTotal = item.price * item.quantity;
+                    const cartItemElement = document.createElement('div');
+                    cartItemElement.className = 'cart-item';
+                    cartItemElement.innerHTML = `
+                        <div class="cart-item-info">
+                            <div class="cart-item-name">${item.name}</div>
+                            <div class="cart-item-price">$${item.price.toFixed(2)} each</div>
+                        </div>
+                        <div class="cart-item-actions">
+                            <div class="quantity-control">
+                                <button class="quantity-btn" onclick="decreaseQuantity(${item.id})">-</button>
+                                <span class="quantity">${item.quantity}</span>
+                                <button class="quantity-btn" onclick="increaseQuantity(${item.id})">+</button>
+                            </div>
+                            <button class="btn btn-danger" onclick="removeFromCart(${item.id})">Remove</button>
+                        </div>
+                        <div class="cart-item-total">$${itemTotal.toFixed(2)}</div>
+                    `;
+                    cartItemsContainer.appendChild(cartItemElement);
+                });
+            }
+            
+            // Update cart summary
+            updateCartSummary();
+        }
+
+        // Update cart summary
+        function updateCartSummary() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const tax = subtotal * taxRate;
+            const total = subtotal + tax;
+            
+            subtotalElement.textContent = `$${subtotal.toFixed(2)}`;
+            taxElement.textContent = `$${tax.toFixed(2)}`;
+            totalElement.textContent = `$${total.toFixed(2)}`;
+        }
+
+        // Update menu items (to reflect items in cart)
+        function updateMenuItems() {
+            for (const category in menuItems) {
+                const container = document.getElementById(category);
+                if (!container) continue;
+                
+                const items = container.querySelectorAll('.menu-item');
+                
+                items.forEach((itemElement, index) => {
+                    const itemId = menuItems[category][index].id;
+                    const actionsDiv = itemElement.querySelector('.item-actions');
+                    if (actionsDiv) {
+                        actionsDiv.innerHTML = getItemActionButton(itemId);
+                    }
+                });
+            }
+        }
+
+        // Create a new order
+        function createOrder() {
+            // Generate order details
+            const orderId = Math.floor(1000 + Math.random() * 9000);
+            const now = new Date();
+            const orderTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            // Calculate estimated ready time (15-30 minutes from now)
+            const estimatedTime = new Date(now.getTime() + (20 + Math.random() * 15) * 60000);
+            const estimatedTimeStr = estimatedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            // Calculate total
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const tax = subtotal * taxRate;
+            const total = subtotal + tax;
+            
+            // Create order object
+            currentOrder = {
+                id: orderId,
+                table: tableNumber,
+                items: [...cart],
+                status: 'preparing',
+                orderTime: orderTime,
+                estimatedTime: estimatedTimeStr,
+                subtotal: subtotal,
+                tax: tax,
+                total: total,
+                timestamp: now.getTime()
+            };
+            
+            // Save to localStorage
+            localStorage.setItem('table12_order', JSON.stringify(currentOrder));
+            
+            // Update UI
+            orderIdElement.textContent = orderId;
+            orderTimeElement.textContent = orderTime;
+            estimatedTimeElement.textContent = estimatedTimeStr;
+            statusTotalElement.textContent = `$${total.toFixed(2)}`;
+            orderedTimeElement.textContent = orderTime;
+            
+            // Update status display
+            updateOrderStatusDisplay();
+            
+            // Simulate sending order to kitchen
+            simulateKitchenUpdates();
+            
+            // Clear cart after order is placed
+            cart = [];
+            updateCart();
+            updateMenuItems();
+        }
+
+        // Update order status display
+        function updateOrderStatusDisplay() {
+            if (!currentOrder) return;
+            
+            // Reset all steps
+            Object.values(statusSteps).forEach(step => {
+                step.classList.remove('completed', 'active');
+            });
+            
+            // Update based on current status
+            statusSteps.ordered.classList.add('completed');
+            
+            if (currentOrder.status === 'preparing') {
+                statusSteps.preparing.classList.add('active');
+            } else if (currentOrder.status === 'ready') {
+                statusSteps.preparing.classList.add('completed');
+                statusSteps.ready.classList.add('active');
+            } else if (currentOrder.status === 'delivered') {
+                statusSteps.preparing.classList.add('completed');
+                statusSteps.ready.classList.add('completed');
+                statusSteps.delivered.classList.add('active');
+                
+                // Hide notification when delivered
+                statusNotification.style.display = 'none';
+            }
+        }
+
+        // Simulate kitchen status updates
+        function simulateKitchenUpdates() {
+            // After 2 minutes, update to "ready"
+            setTimeout(() => {
+                if (currentOrder && currentOrder.status === 'preparing') {
+                    currentOrder.status = 'ready';
+                    localStorage.setItem('table12_order', JSON.stringify(currentOrder));
+                    updateOrderStatusDisplay();
+                    
+                    // Show notification
+                    statusNotification.style.display = 'flex';
+                    alert('Your order is ready! A staff member will deliver it to your table shortly.');
+                }
+            }, 120000); // 2 minutes
+            
+            // After 4 minutes, update to "delivered"
+            setTimeout(() => {
+                if (currentOrder && currentOrder.status === 'ready') {
+                    currentOrder.status = 'delivered';
+                    localStorage.setItem('table12_order', JSON.stringify(currentOrder));
+                    updateOrderStatusDisplay();
+                    
+                    // Hide notification
+                    statusNotification.style.display = 'none';
+                }
+            }, 240000); // 4 minutes
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

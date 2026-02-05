@@ -1,0 +1,2243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bella Vista Restaurant - Table Order</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-green: #2d5f3f;
+            --accent-gold: #d4af37;
+            --dark-bg: #1a1a1a;
+            --light-bg: #fafaf8;
+            --card-bg: #ffffff;
+            --text-dark: #2c2c2c;
+            --text-light: #6b6b6b;
+            --border-color: #e8e8e5;
+            --error-red: #dc3545;
+            --success-green: #28a745;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Lato', sans-serif;
+            background: linear-gradient(135deg, var(--light-bg) 0%, #f0f0ed 100%);
+            color: var(--text-dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* Header Styles */
+        header {
+            background: linear-gradient(135deg, var(--primary-green) 0%, #234530 100%);
+            color: white;
+            padding: 1.5rem 0;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            animation: slideDown 0.6s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .table-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 0.6rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .table-info i {
+            color: var(--accent-gold);
+            font-size: 1.1rem;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.3rem, 4vw, 2rem);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            transition: var(--transition-smooth);
+        }
+        
+        .logo:hover {
+            transform: scale(1.02);
+        }
+        
+        .logo i {
+            color: var(--accent-gold);
+            font-size: clamp(1.5rem, 4.5vw, 2.2rem);
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .cart-icon {
+            position: relative;
+            font-size: 1.75rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            padding: 0.5rem;
+            border-radius: 50%;
+        }
+        
+        .cart-icon:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .cart-icon:active {
+            transform: scale(0.95);
+        }
+        
+        .cart-count {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background: linear-gradient(135deg, var(--error-red), #ff6b6b);
+            color: white;
+            border-radius: 50%;
+            min-width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        /* Tab Navigation */
+        .tabs {
+            display: flex;
+            background: var(--card-bg);
+            margin: 2rem 0;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            gap: 2px;
+            background: var(--border-color);
+        }
+        
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 1.25rem 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            transition: var(--transition-smooth);
+            background: var(--card-bg);
+            color: var(--text-light);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tab::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-gold), var(--primary-green));
+            transform: translateX(-100%);
+            transition: var(--transition-smooth);
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, var(--primary-green), #2d5f3f);
+            color: white;
+        }
+        
+        .tab.active::before {
+            transform: translateX(0);
+        }
+        
+        .tab:hover:not(.active) {
+            background: #f5f5f5;
+            color: var(--text-dark);
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .page-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.75rem, 5vw, 2.5rem);
+            margin-bottom: 2rem;
+            color: var(--primary-green);
+            position: relative;
+            padding-bottom: 1rem;
+        }
+        
+        .page-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-gold), transparent);
+            border-radius: 2px;
+        }
+        
+        /* Category Sections */
+        .category {
+            margin-bottom: 3rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .category h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.3rem, 3.5vw, 1.75rem);
+            color: var(--primary-green);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .category h3::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--accent-gold);
+            border-radius: 50%;
+        }
+        
+        /* Menu Grid */
+        .menu-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+            gap: 2rem;
+        }
+        
+        /* Menu Item Card */
+        .menu-item {
+            background: var(--card-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition-smooth);
+            border: 2px solid transparent;
+            animation: scaleIn 0.5s ease-out backwards;
+        }
+        
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .menu-item:nth-child(1) { animation-delay: 0.1s; }
+        .menu-item:nth-child(2) { animation-delay: 0.15s; }
+        .menu-item:nth-child(3) { animation-delay: 0.2s; }
+        .menu-item:nth-child(4) { animation-delay: 0.25s; }
+        .menu-item:nth-child(5) { animation-delay: 0.3s; }
+        .menu-item:nth-child(6) { animation-delay: 0.35s; }
+        
+        .menu-item:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--accent-gold);
+        }
+        
+        .item-image {
+            height: 220px;
+            width: 100%;
+            object-fit: cover;
+            transition: var(--transition-smooth);
+        }
+        
+        .menu-item:hover .item-image {
+            transform: scale(1.05);
+        }
+        
+        .item-details {
+            padding: 1.5rem;
+        }
+        
+        .item-name {
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+        
+        .item-desc {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-bottom: 1.25rem;
+            line-height: 1.5;
+        }
+        
+        .item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .item-price {
+            font-weight: 700;
+            color: var(--primary-green);
+            font-size: clamp(1.25rem, 3vw, 1.5rem);
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .item-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: var(--transition-smooth);
+            box-shadow: var(--shadow-sm);
+            white-space: nowrap;
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-green), #2d5f3f);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #3a7a52, var(--primary-green));
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--accent-gold), #c9a942);
+            color: var(--text-dark);
+        }
+        
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #e0c050, var(--accent-gold));
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--error-red), #c82333);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #e74c3c, var(--error-red));
+            box-shadow: var(--shadow-md);
+        }
+        
+        /* Quantity Control */
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--light-bg);
+            padding: 0.5rem 0.75rem;
+            border-radius: 12px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .quantity-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: var(--transition-smooth);
+            color: var(--primary-green);
+        }
+        
+        .quantity-btn:hover {
+            background: var(--primary-green);
+            color: white;
+            border-color: var(--primary-green);
+            transform: scale(1.1);
+        }
+        
+        .quantity {
+            font-weight: 700;
+            min-width: 24px;
+            text-align: center;
+            color: var(--text-dark);
+            font-size: 1.05rem;
+        }
+        
+        /* Cart Styles */
+        .cart-content {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .empty-cart {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-light);
+        }
+        
+        .empty-cart i {
+            font-size: 5rem;
+            color: var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .empty-cart h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.75rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-dark);
+        }
+        
+        .cart-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 1rem;
+            padding: 1.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            transition: var(--transition-smooth);
+            background: var(--light-bg);
+        }
+        
+        .cart-item:hover {
+            border-color: var(--accent-gold);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .cart-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .cart-item-name {
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: var(--text-dark);
+        }
+        
+        .cart-item-price {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        
+        .cart-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .cart-item-total {
+            grid-column: 1 / -1;
+            text-align: right;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary-green);
+            font-family: 'Playfair Display', serif;
+            padding-top: 0.75rem;
+            border-top: 2px solid var(--border-color);
+        }
+        
+        /* Cart Summary */
+        .cart-summary {
+            background: linear-gradient(135deg, var(--light-bg), #f0f0ed);
+            padding: 2rem;
+            border-radius: 16px;
+            margin-top: 2rem;
+            border: 2px solid var(--border-color);
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+        }
+        
+        .summary-row.total {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-green);
+            padding-top: 1.25rem;
+            border-top: 3px solid var(--accent-gold);
+            margin-top: 1.25rem;
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .checkout-btn-container {
+            margin-top: 2rem;
+        }
+        
+        .checkout-btn-container .btn {
+            width: 100%;
+            padding: 1.25rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        /* Order Confirmation */
+        .order-confirmation {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            max-width: 600px;
+            margin: 2rem auto;
+        }
+        
+        .order-confirmation i {
+            font-size: 5rem;
+            color: var(--success-green);
+            margin-bottom: 1.5rem;
+            animation: scaleUp 0.6s ease-out;
+        }
+        
+        @keyframes scaleUp {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .order-confirmation h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.25rem;
+            margin-bottom: 1rem;
+            color: var(--primary-green);
+        }
+        
+        .order-details {
+            background: var(--light-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            margin: 2rem 0;
+        }
+        
+        .order-detail {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .order-detail strong {
+            color: var(--text-dark);
+        }
+        
+        .order-detail span {
+            font-weight: 700;
+            color: var(--primary-green);
+            font-family: 'Playfair Display', serif;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+            
+            header {
+                padding: 1rem 0;
+            }
+            
+            .tabs {
+                margin: 1.5rem 0;
+                border-radius: 12px;
+            }
+            
+            .tab {
+                padding: 1rem 0.75rem;
+                font-size: 0.85rem;
+            }
+            
+            .menu-items {
+                gap: 1.5rem;
+            }
+            
+            .item-image {
+                height: 200px;
+            }
+            
+            .item-details {
+                padding: 1.25rem;
+            }
+            
+            .item-footer {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .item-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+            
+            .cart-item {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .cart-item-actions {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+            
+            .cart-item-actions .btn {
+                width: 100%;
+            }
+            
+            .cart-summary {
+                padding: 1.5rem;
+            }
+            
+            .order-confirmation {
+                padding: 2rem 1.5rem;
+            }
+            
+            .order-confirmation h2 {
+                font-size: 1.75rem;
+            }
+            
+            .order-details {
+                padding: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header-content {
+                gap: 0.5rem;
+            }
+            
+            .logo {
+                font-size: 1.2rem;
+            }
+            
+            .cart-icon {
+                font-size: 1.5rem;
+            }
+            
+            .tab {
+                padding: 0.85rem 0.5rem;
+                font-size: 0.8rem;
+            }
+            
+            .page-title {
+                font-size: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .category h3 {
+                font-size: 1.2rem;
+            }
+            
+            .menu-items {
+                gap: 1.25rem;
+            }
+            
+            .item-image {
+                height: 180px;
+            }
+            
+            .btn {
+                padding: 0.65rem 1.25rem;
+                font-size: 0.9rem;
+            }
+            
+            .quantity-btn {
+                width: 32px;
+                height: 32px;
+            }
+        }
+        
+        /* Loading Animation */
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        
+        .loading {
+            animation: shimmer 2s infinite;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 1000px 100%;
+        }
+
+        /* Payment Form Styles */
+        .payment-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .payment-form-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .payment-form {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .form-section {
+            padding-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .form-section:last-of-type {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            color: var(--primary-green);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-title i {
+            color: var(--accent-gold);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.875rem 1.125rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: 'Lato', sans-serif;
+            transition: var(--transition-smooth);
+            background: var(--light-bg);
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(45, 95, 63, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .payment-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .payment-actions .btn {
+            flex: 1;
+            padding: 1.125rem;
+            font-size: 1.05rem;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary-green);
+            border: 2px solid var(--primary-green);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-green);
+            color: white;
+        }
+
+        /* Order Summary Sidebar */
+        .order-summary-sidebar {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 100px;
+        }
+
+        .sidebar-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: var(--primary-green);
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .payment-order-items {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        .payment-order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            padding: 1rem;
+            background: var(--light-bg);
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+        }
+
+        .payment-item-info {
+            flex: 1;
+        }
+
+        .payment-item-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .payment-item-quantity {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .payment-item-price {
+            font-weight: 700;
+            color: var(--primary-green);
+            white-space: nowrap;
+            margin-left: 1rem;
+        }
+
+        .sidebar-summary {
+            padding-top: 1.5rem;
+            border-top: 2px solid var(--border-color);
+        }
+
+        /* Responsive Payment Styles */
+        @media (max-width: 1024px) {
+            .payment-container {
+                grid-template-columns: 1fr;
+            }
+
+            .order-summary-sidebar {
+                position: static;
+                order: -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .payment-form-section {
+                padding: 1.5rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .payment-actions {
+                flex-direction: column;
+            }
+
+            .order-summary-sidebar {
+                padding: 1.5rem;
+            }
+
+            .payment-order-items {
+                max-height: 200px;
+            }
+
+            .header-right {
+                gap: 0.75rem;
+            }
+
+            .table-info {
+                padding: 0.5rem 0.875rem;
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Payment Method Selector */
+        .payment-method-selector {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .payment-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .payment-option {
+            cursor: pointer;
+        }
+
+        .payment-option input[type="radio"] {
+            display: none;
+        }
+
+        .payment-option-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1.25rem;
+            background: var(--light-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            transition: var(--transition-smooth);
+            text-align: center;
+        }
+
+        .payment-option-content i {
+            font-size: 2rem;
+            color: var(--text-light);
+            transition: var(--transition-smooth);
+        }
+
+        .payment-option input[type="radio"]:checked + .payment-option-content {
+            background: var(--primary-green);
+            color: white;
+            border-color: var(--primary-green);
+        }
+
+        .payment-option input[type="radio"]:checked + .payment-option-content i {
+            color: var(--accent-gold);
+        }
+
+        .payment-option:hover .payment-option-content {
+            border-color: var(--primary-green);
+            transform: translateY(-2px);
+        }
+
+        /* Table Order Info in Payment Sidebar */
+        .table-order-info {
+            background: var(--light-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .order-info-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .order-info-row i {
+            color: var(--accent-gold);
+            font-size: 1.1rem;
+        }
+
+        /* Order Status Tracking Styles */
+        .status-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .order-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 1.5rem 2rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .order-id-display,
+        .order-table-display {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .order-id-display .label,
+        .order-table-display .label {
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .order-id-display .value,
+        .order-table-display .value {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-green);
+        }
+
+        /* Status Tracker */
+        .status-tracker {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .status-tracker::before {
+            content: '';
+            position: absolute;
+            left: 4.5rem;
+            top: 4.5rem;
+            bottom: 4.5rem;
+            width: 3px;
+            background: var(--border-color);
+            z-index: 0;
+        }
+
+        .status-step {
+            display: flex;
+            align-items: start;
+            gap: 1.5rem;
+            padding: 1.5rem 0;
+            position: relative;
+            z-index: 1;
+            opacity: 0.4;
+            transition: var(--transition-smooth);
+        }
+
+        .status-step.active {
+            opacity: 1;
+        }
+
+        .status-step.completed {
+            opacity: 1;
+        }
+
+        .status-step:last-child {
+            padding-bottom: 0;
+        }
+
+        .step-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: var(--light-bg);
+            border: 3px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: var(--transition-smooth);
+        }
+
+        .step-icon i {
+            font-size: 2rem;
+            color: var(--text-light);
+            transition: var(--transition-smooth);
+        }
+
+        .status-step.active .step-icon {
+            background: var(--primary-green);
+            border-color: var(--primary-green);
+            animation: pulse-ring 2s ease-out infinite;
+        }
+
+        .status-step.active .step-icon i {
+            color: white;
+        }
+
+        .status-step.completed .step-icon {
+            background: var(--success-green);
+            border-color: var(--success-green);
+        }
+
+        .status-step.completed .step-icon i {
+            color: white;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                box-shadow: 0 0 0 0 rgba(45, 95, 63, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 15px rgba(45, 95, 63, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(45, 95, 63, 0);
+            }
+        }
+
+        .step-content {
+            flex: 1;
+            padding-top: 0.75rem;
+        }
+
+        .step-content h4 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            color: var(--text-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .step-content p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        /* Estimated Time */
+        .estimated-time {
+            background: linear-gradient(135deg, var(--accent-gold), #c9a942);
+            color: var(--dark-bg);
+            padding: 1.25rem 2rem;
+            border-radius: 16px;
+            text-align: center;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .estimated-time i {
+            margin-right: 0.5rem;
+        }
+
+        .estimated-time strong {
+            font-size: 1.3rem;
+        }
+
+        /* Order Items in Status */
+        .order-items-status {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
+        }
+
+        .order-items-status h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--primary-green);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .status-order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: var(--light-bg);
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+        }
+
+        .status-order-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .status-item-info {
+            flex: 1;
+        }
+
+        .status-item-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .status-item-quantity {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .status-item-price {
+            font-weight: 700;
+            color: var(--primary-green);
+            font-size: 1.1rem;
+        }
+
+        /* Status Actions */
+        .status-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .status-actions .btn {
+            flex: 1;
+            min-width: 200px;
+            padding: 1.125rem;
+            font-size: 1.05rem;
+        }
+
+        @media (max-width: 768px) {
+            .status-tracker {
+                padding: 1.5rem;
+            }
+
+            .status-tracker::before {
+                left: 3rem;
+            }
+
+            .step-icon {
+                width: 50px;
+                height: 50px;
+            }
+
+            .step-icon i {
+                font-size: 1.5rem;
+            }
+
+            .step-content h4 {
+                font-size: 1.1rem;
+            }
+
+            .order-header-info {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 1.25rem 1.5rem;
+            }
+
+            .status-actions {
+                flex-direction: column;
+            }
+
+            .status-actions .btn {
+                min-width: auto;
+            }
+
+            .payment-options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-utensils"></i>
+                    <span>Bella Vista</span>
+                </div>
+                <div class="header-right">
+                    <div class="table-info" id="tableInfo">
+                        <i class="fas fa-chair"></i>
+                        <span id="tableNumber">Table -</span>
+                    </div>
+                    <div class="cart-icon" id="cartTab">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="cart-count" id="cartCount">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" data-tab="menu">
+                <i class="fas fa-book-open"></i> Menu
+            </div>
+            <div class="tab" data-tab="cart">
+                <i class="fas fa-clipboard-list"></i> Review Order
+            </div>
+            <div class="tab" data-tab="payment">
+                <i class="fas fa-credit-card"></i> Payment
+            </div>
+            <div class="tab" data-tab="status">
+                <i class="fas fa-tasks"></i> Order Status
+            </div>
+        </div>
+
+        <!-- Menu Tab -->
+        <div id="menu" class="tab-content active">
+            <h2 class="page-title">Our Menu</h2>
+            <div id="menuContainer"></div>
+        </div>
+
+        <!-- Cart Tab -->
+        <div id="cart" class="tab-content">
+            <h2 class="page-title">Review Your Order</h2>
+            <div class="cart-content">
+                <div id="cartItems"></div>
+                <div class="cart-summary" id="cartSummary">
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Tax (8%):</span>
+                        <span id="tax">$0.00</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span id="total">$0.00</span>
+                    </div>
+                    <div class="payment-method-selector">
+                        <h4 style="margin-bottom: 1rem; color: var(--text-dark);">Choose Payment Method:</h4>
+                        <div class="payment-options">
+                            <label class="payment-option">
+                                <input type="radio" name="paymentMethod" value="card" checked>
+                                <span class="payment-option-content">
+                                    <i class="fas fa-credit-card"></i>
+                                    <span>Pay Now (Card)</span>
+                                </span>
+                            </label>
+                            <label class="payment-option">
+                                <input type="radio" name="paymentMethod" value="wallet">
+                                <span class="payment-option-content">
+                                    <i class="fas fa-wallet"></i>
+                                    <span>Digital Wallet</span>
+                                </span>
+                            </label>
+                            <label class="payment-option">
+                                <input type="radio" name="paymentMethod" value="counter">
+                                <span class="payment-option-content">
+                                    <i class="fas fa-cash-register"></i>
+                                    <span>Pay at Counter</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="checkout-btn-container">
+                        <button class="btn btn-secondary" id="checkoutBtn">
+                            <i class="fas fa-arrow-right"></i> Continue to Payment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Tab -->
+        <div id="payment" class="tab-content">
+            <h2 class="page-title">Complete Payment</h2>
+            <div class="payment-container">
+                <div class="payment-form-section">
+                    <form id="paymentForm" class="payment-form">
+                        <div class="form-section">
+                            <h3 class="section-title">
+                                <i class="fas fa-credit-card"></i> Card Information
+                            </h3>
+                            <div class="form-group">
+                                <label for="cardName">Cardholder Name</label>
+                                <input type="text" id="cardName" placeholder="John Doe" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cardNumber">Card Number</label>
+                                <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="expiryDate">Expiry Date</label>
+                                    <input type="text" id="expiryDate" placeholder="MM/YY" maxlength="5" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cvv">CVV</label>
+                                    <input type="text" id="cvv" placeholder="123" maxlength="3" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3 class="section-title">
+                                <i class="fas fa-user"></i> Contact Information
+                            </h3>
+                            <div class="form-group">
+                                <label for="customerName">Your Name</label>
+                                <input type="text" id="customerName" placeholder="John Doe" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone Number (Optional)</label>
+                                <input type="tel" id="phone" placeholder="+1 (555) 123-4567">
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email (Optional - for receipt)</label>
+                                <input type="email" id="email" placeholder="john@example.com">
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3 class="section-title">
+                                <i class="fas fa-sticky-note"></i> Special Instructions
+                            </h3>
+                            <div class="form-group">
+                                <label for="instructions">Special Requests for Kitchen (Optional)</label>
+                                <textarea id="instructions" rows="3" placeholder="E.g., No onions, extra spicy, allergy notes, etc."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="payment-actions">
+                            <button type="button" class="btn btn-outline" id="backToCartBtn">
+                                <i class="fas fa-arrow-left"></i> Back to Order
+                            </button>
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="fas fa-check"></i> Confirm & Pay
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="order-summary-sidebar">
+                    <h3 class="sidebar-title">Order Summary</h3>
+                    <div class="table-order-info">
+                        <div class="order-info-row">
+                            <i class="fas fa-chair"></i>
+                            <span id="paymentTableNumber">Table -</span>
+                        </div>
+                        <div class="order-info-row">
+                            <i class="fas fa-clock"></i>
+                            <span id="orderTime">-</span>
+                        </div>
+                    </div>
+                    <div id="paymentOrderItems" class="payment-order-items"></div>
+                    <div class="sidebar-summary">
+                        <div class="summary-row">
+                            <span>Subtotal:</span>
+                            <span id="paymentSubtotal">$0.00</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Tax (8%):</span>
+                            <span id="paymentTax">$0.00</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Total:</span>
+                            <span id="paymentTotal">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Status Tab -->
+        <div id="status" class="tab-content">
+            <h2 class="page-title">Order Status</h2>
+            <div class="status-container">
+                <div class="order-header-info">
+                    <div class="order-id-display">
+                        <span class="label">Order ID:</span>
+                        <span class="value" id="statusOrderId">-</span>
+                    </div>
+                    <div class="order-table-display">
+                        <span class="label">Table:</span>
+                        <span class="value" id="statusTableNumber">-</span>
+                    </div>
+                </div>
+
+                <div class="status-tracker">
+                    <div class="status-step active" id="step-ordered">
+                        <div class="step-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="step-content">
+                            <h4>Order Placed</h4>
+                            <p>Your order has been received</p>
+                        </div>
+                    </div>
+
+                    <div class="status-step" id="step-preparing">
+                        <div class="step-icon">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <div class="step-content">
+                            <h4>Preparing</h4>
+                            <p>Our chef is preparing your meal</p>
+                        </div>
+                    </div>
+
+                    <div class="status-step" id="step-ready">
+                        <div class="step-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="step-content">
+                            <h4>Ready</h4>
+                            <p>Your order is ready for serving</p>
+                        </div>
+                    </div>
+
+                    <div class="status-step" id="step-delivered">
+                        <div class="step-icon">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        <div class="step-content">
+                            <h4>Served</h4>
+                            <p>Enjoy your meal!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="estimated-time">
+                    <i class="fas fa-clock"></i>
+                    <span>Estimated time: <strong id="estimatedTime">-</strong></span>
+                </div>
+
+                <div class="order-items-status">
+                    <h3>Your Order</h3>
+                    <div id="statusOrderItems"></div>
+                </div>
+
+                <div class="status-actions">
+                    <button class="btn btn-outline" id="backToMenuFromStatus">
+                        <i class="fas fa-plus"></i> Add More Items
+                    </button>
+                    <button class="btn btn-primary" id="callWaiterBtn">
+                        <i class="fas fa-bell"></i> Call Waiter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Menu data
+        const menuItems = {
+            'Appetizers': [
+                {
+                    id: 1,
+                    name: 'Bruschetta',
+                    description: 'Toasted bread topped with tomatoes, garlic, basil, and olive oil',
+                    price: 8.99,
+                    image: 'https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=500'
+                },
+                {
+                    id: 2,
+                    name: 'Caprese Salad',
+                    description: 'Fresh mozzarella, tomatoes, and basil with balsamic glaze',
+                    price: 10.99,
+                    image: 'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=500'
+                },
+                {
+                    id: 3,
+                    name: 'Calamari Fritti',
+                    description: 'Crispy fried calamari with marinara sauce',
+                    price: 12.99,
+                    image: 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=500'
+                }
+            ],
+            'Main Course': [
+                {
+                    id: 4,
+                    name: 'Margherita Pizza',
+                    description: 'Classic pizza with tomato sauce, mozzarella, and fresh basil',
+                    price: 14.99,
+                    image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=500'
+                },
+                {
+                    id: 5,
+                    name: 'Spaghetti Carbonara',
+                    description: 'Creamy pasta with pancetta, eggs, and Parmesan cheese',
+                    price: 16.99,
+                    image: 'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=500'
+                },
+                {
+                    id: 6,
+                    name: 'Grilled Salmon',
+                    description: 'Fresh Atlantic salmon with lemon butter sauce and vegetables',
+                    price: 22.99,
+                    image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=500'
+                }
+            ],
+            'Desserts': [
+                {
+                    id: 7,
+                    name: 'Tiramisu',
+                    description: 'Classic Italian dessert with coffee-soaked ladyfingers and mascarpone',
+                    price: 7.99,
+                    image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=500'
+                },
+                {
+                    id: 8,
+                    name: 'Panna Cotta',
+                    description: 'Silky Italian custard with berry compote',
+                    price: 6.99,
+                    image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=500'
+                },
+                {
+                    id: 9,
+                    name: 'Gelato',
+                    description: 'Artisanal Italian ice cream - choice of flavors',
+                    price: 5.99,
+                    image: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=500'
+                }
+            ]
+        };
+
+        // Cart state
+        let cart = [];
+        let currentTableNumber = null;
+        let currentOrderId = null;
+        let currentOrderStatus = 'ordered'; // ordered, preparing, ready, delivered
+        const taxRate = 0.08;
+
+        // Get table number from URL parameter (simulated QR code scan)
+        function getTableNumber() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tableParam = urlParams.get('table');
+            return tableParam || Math.floor(Math.random() * 20) + 1; // Random table for demo
+        }
+
+        // DOM elements
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const menuContainer = document.getElementById('menuContainer');
+        const cartItemsContainer = document.getElementById('cartItems');
+        const cartCount = document.getElementById('cartCount');
+        const tableNumberDisplay = document.getElementById('tableNumber');
+        const subtotalElement = document.getElementById('subtotal');
+        const taxElement = document.getElementById('tax');
+        const totalElement = document.getElementById('total');
+        const cartTab = document.getElementById('cartTab');
+        const checkoutBtn = document.getElementById('checkoutBtn');
+        const statusOrderId = document.getElementById('statusOrderId');
+        const statusTableNumber = document.getElementById('statusTableNumber');
+        const estimatedTime = document.getElementById('estimatedTime');
+        const statusOrderItems = document.getElementById('statusOrderItems');
+        const backToMenuFromStatus = document.getElementById('backToMenuFromStatus');
+        const callWaiterBtn = document.getElementById('callWaiterBtn');
+
+        // Initialize menu
+        function initializeMenu() {
+            for (const category in menuItems) {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category';
+                categoryDiv.id = category.replace(' ', '-');
+                
+                const categoryTitle = document.createElement('h3');
+                categoryTitle.textContent = category;
+                categoryDiv.appendChild(categoryTitle);
+                
+                const itemsGrid = document.createElement('div');
+                itemsGrid.className = 'menu-items';
+                
+                menuItems[category].forEach(item => {
+                    itemsGrid.appendChild(createMenuItemElement(item));
+                });
+                
+                categoryDiv.appendChild(itemsGrid);
+                menuContainer.appendChild(categoryDiv);
+            }
+        }
+
+        // Create a menu item element
+        function createMenuItemElement(item) {
+            const div = document.createElement('div');
+            div.className = 'menu-item';
+            div.innerHTML = `
+                <img src="${item.image}" alt="${item.name}" class="item-image" loading="lazy">
+                <div class="item-details">
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-desc">${item.description}</div>
+                    <div class="item-footer">
+                        <div class="item-price">$${item.price.toFixed(2)}</div>
+                        <div class="item-actions">
+                            ${getItemActionButton(item.id)}
+                        </div>
+                    </div>
+                </div>
+            `;
+            return div;
+        }
+
+        // Get the appropriate action button for a menu item
+        function getItemActionButton(itemId) {
+            const cartItem = cart.find(item => item.id === itemId);
+            
+            if (cartItem) {
+                return `
+                    <div class="quantity-control">
+                        <button class="quantity-btn" onclick="decreaseQuantity(${itemId})" aria-label="Decrease quantity">−</button>
+                        <span class="quantity">${cartItem.quantity}</span>
+                        <button class="quantity-btn" onclick="increaseQuantity(${itemId})" aria-label="Increase quantity">+</button>
+                    </div>
+                `;
+            } else {
+                return `<button class="btn btn-primary" onclick="addToCart(${itemId})"><i class="fas fa-plus"></i> Add</button>`;
+            }
+        }
+
+        // Add item to cart
+        function addToCart(itemId) {
+            let item = null;
+            
+            for (const cat in menuItems) {
+                const foundItem = menuItems[cat].find(menuItem => menuItem.id === itemId);
+                if (foundItem) {
+                    item = foundItem;
+                    break;
+                }
+            }
+            
+            if (!item) return;
+            
+            const existingItem = cart.find(cartItem => cartItem.id === itemId);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ ...item, quantity: 1 });
+            }
+            
+            updateCart();
+            updateMenuItems();
+        }
+
+        // Increase item quantity
+        function increaseQuantity(itemId) {
+            const item = cart.find(item => item.id === itemId);
+            if (item) {
+                item.quantity += 1;
+                updateCart();
+                updateMenuItems();
+            }
+        }
+
+        // Decrease item quantity
+        function decreaseQuantity(itemId) {
+            const itemIndex = cart.findIndex(item => item.id === itemId);
+            if (itemIndex !== -1) {
+                if (cart[itemIndex].quantity > 1) {
+                    cart[itemIndex].quantity -= 1;
+                } else {
+                    cart.splice(itemIndex, 1);
+                }
+                updateCart();
+                updateMenuItems();
+            }
+        }
+
+        // Remove item from cart
+        function removeFromCart(itemId) {
+            const itemIndex = cart.findIndex(item => item.id === itemId);
+            if (itemIndex !== -1) {
+                cart.splice(itemIndex, 1);
+                updateCart();
+                updateMenuItems();
+            }
+        }
+
+        // Update cart display
+        function updateCart() {
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            cartCount.textContent = totalItems;
+            
+            cartItemsContainer.innerHTML = '';
+            
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = `
+                    <div class="empty-cart">
+                        <i class="fas fa-shopping-cart"></i>
+                        <h3>Your cart is empty</h3>
+                        <p>Add some delicious items from our menu!</p>
+                    </div>
+                `;
+            } else {
+                cart.forEach(item => {
+                    const itemTotal = item.price * item.quantity;
+                    const cartItemElement = document.createElement('div');
+                    cartItemElement.className = 'cart-item';
+                    cartItemElement.innerHTML = `
+                        <div class="cart-item-info">
+                            <div class="cart-item-name">${item.name}</div>
+                            <div class="cart-item-price">$${item.price.toFixed(2)} each</div>
+                        </div>
+                        <div class="cart-item-actions">
+                            <div class="quantity-control">
+                                <button class="quantity-btn" onclick="decreaseQuantity(${item.id})" aria-label="Decrease quantity">−</button>
+                                <span class="quantity">${item.quantity}</span>
+                                <button class="quantity-btn" onclick="increaseQuantity(${item.id})" aria-label="Increase quantity">+</button>
+                            </div>
+                            <button class="btn btn-danger" onclick="removeFromCart(${item.id})"><i class="fas fa-trash"></i> Remove</button>
+                        </div>
+                        <div class="cart-item-total">$${itemTotal.toFixed(2)}</div>
+                    `;
+                    cartItemsContainer.appendChild(cartItemElement);
+                });
+            }
+            
+            updateCartSummary();
+        }
+
+        // Update cart summary
+        function updateCartSummary() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const tax = subtotal * taxRate;
+            const total = subtotal + tax;
+            
+            subtotalElement.textContent = `$${subtotal.toFixed(2)}`;
+            taxElement.textContent = `$${tax.toFixed(2)}`;
+            totalElement.textContent = `$${total.toFixed(2)}`;
+        }
+
+        // Update menu items
+        function updateMenuItems() {
+            for (const category in menuItems) {
+                const container = document.getElementById(category.replace(' ', '-'));
+                const items = container.querySelectorAll('.menu-item');
+                
+                items.forEach((itemElement, index) => {
+                    const itemId = menuItems[category][index].id;
+                    const actionsDiv = itemElement.querySelector('.item-actions');
+                    if (actionsDiv) {
+                        actionsDiv.innerHTML = getItemActionButton(itemId);
+                    }
+                });
+            }
+        }
+
+        // Switch tabs
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+                
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                tabContents.forEach(content => content.classList.remove('active'));
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Cart icon click
+        cartTab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelector('.tab[data-tab="cart"]').classList.add('active');
+            
+            tabContents.forEach(content => content.classList.remove('active'));
+            document.getElementById('cart').classList.add('active');
+        });
+
+        // Checkout
+        checkoutBtn.addEventListener('click', () => {
+            if (cart.length === 0) {
+                alert('Your cart is empty. Please add items before checking out.');
+                return;
+            }
+            
+            // Get selected payment method
+            const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked').value;
+            
+            if (selectedPayment === 'counter') {
+                // For pay at counter, skip payment page and go directly to order placement
+                if (confirm('Your order will be sent to the kitchen. You can pay at the counter after your meal. Continue?')) {
+                    processPayment(); // This will show status page
+                }
+            } else {
+                // Navigate to payment page for card/wallet payment
+                tabs.forEach(t => t.classList.remove('active'));
+                document.querySelector('.tab[data-tab="payment"]').classList.add('active');
+                
+                tabContents.forEach(content => content.classList.remove('active'));
+                document.getElementById('payment').classList.add('active');
+                
+                // Update payment summary
+                updatePaymentSummary();
+            }
+        });
+
+        // Back to menu
+        backToMenuBtn.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelector('.tab[data-tab="menu"]').classList.add('active');
+            
+            tabContents.forEach(content => content.classList.remove('active'));
+            document.getElementById('menu').classList.add('active');
+        });
+
+        // Back to cart from payment
+        const backToCartBtn = document.getElementById('backToCartBtn');
+        backToCartBtn.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelector('.tab[data-tab="cart"]').classList.add('active');
+            
+            tabContents.forEach(content => content.classList.remove('active'));
+            document.getElementById('cart').classList.add('active');
+        });
+
+        // Payment form submission
+        const paymentForm = document.getElementById('paymentForm');
+        paymentForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Validate form (basic validation, browser handles required fields)
+            const cardNumber = document.getElementById('cardNumber').value;
+            const expiryDate = document.getElementById('expiryDate').value;
+            const cvv = document.getElementById('cvv').value;
+            
+            // Simple validation
+            if (cardNumber.replace(/\s/g, '').length < 13) {
+                alert('Please enter a valid card number');
+                return;
+            }
+            
+            if (!expiryDate.match(/^\d{2}\/\d{2}$/)) {
+                alert('Please enter expiry date in MM/YY format');
+                return;
+            }
+            
+            if (cvv.length < 3) {
+                alert('Please enter a valid CVV');
+                return;
+            }
+            
+            // Process payment (simulate)
+            processPayment();
+        });
+
+        // Process payment and show order status
+        function processPayment() {
+            currentOrderId = Math.floor(1000 + Math.random() * 9000);
+            const estimatedMinutes = Math.floor(15 + Math.random() * 16); // 15-30 minutes
+            
+            // Update status page
+            statusOrderId.textContent = `#${currentOrderId}`;
+            statusTableNumber.textContent = `Table ${currentTableNumber}`;
+            estimatedTime.textContent = `${estimatedMinutes} minutes`;
+            
+            // Show order items in status page
+            updateStatusOrderItems();
+            
+            // Switch to status tab
+            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelector('.tab[data-tab="status"]').classList.add('active');
+            
+            tabContents.forEach(content => content.classList.remove('active'));
+            document.getElementById('status').classList.add('active');
+            
+            // Simulate order status progression
+            simulateOrderProgress(estimatedMinutes);
+            
+            // Reset form but keep cart for potential additional orders
+            paymentForm.reset();
+        }
+
+        // Update order items in status page
+        function updateStatusOrderItems() {
+            statusOrderItems.innerHTML = '';
+            
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                const itemElement = document.createElement('div');
+                itemElement.className = 'status-order-item';
+                itemElement.innerHTML = `
+                    <div class="status-item-info">
+                        <div class="status-item-name">${item.name}</div>
+                        <div class="status-item-quantity">Quantity: ${item.quantity}</div>
+                    </div>
+                    <div class="status-item-price">$${itemTotal.toFixed(2)}</div>
+                `;
+                statusOrderItems.appendChild(itemElement);
+            });
+        }
+
+        // Simulate order status progression
+        function simulateOrderProgress(totalMinutes) {
+            currentOrderStatus = 'ordered';
+            updateStatusSteps();
+            
+            // Move to preparing after 2 seconds (demo - would be 2 minutes in production)
+            setTimeout(() => {
+                currentOrderStatus = 'preparing';
+                updateStatusSteps();
+            }, 2000);
+            
+            // Move to ready after 5 seconds (demo - would be ~70% of estimated time)
+            setTimeout(() => {
+                currentOrderStatus = 'ready';
+                updateStatusSteps();
+            }, 5000);
+            
+            // Move to delivered after 8 seconds (demo - would be triggered by staff)
+            setTimeout(() => {
+                currentOrderStatus = 'delivered';
+                updateStatusSteps();
+                // Clear cart after delivery
+                setTimeout(() => {
+                    cart = [];
+                    updateCart();
+                    updateMenuItems();
+                }, 1000);
+            }, 8000);
+        }
+
+        // Update status step visuals
+        function updateStatusSteps() {
+            const steps = {
+                'ordered': ['step-ordered'],
+                'preparing': ['step-ordered', 'step-preparing'],
+                'ready': ['step-ordered', 'step-preparing', 'step-ready'],
+                'delivered': ['step-ordered', 'step-preparing', 'step-ready', 'step-delivered']
+            };
+            
+            // Reset all steps
+            document.querySelectorAll('.status-step').forEach(step => {
+                step.classList.remove('active', 'completed');
+            });
+            
+            // Mark completed steps
+            const activeSteps = steps[currentOrderStatus];
+            activeSteps.forEach((stepId, index) => {
+                const stepElement = document.getElementById(stepId);
+                if (index < activeSteps.length - 1) {
+                    stepElement.classList.add('completed');
+                } else {
+                    stepElement.classList.add('active');
+                }
+            });
+        }
+
+        // Back to menu from status
+        backToMenuFromStatus.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelector('.tab[data-tab="menu"]').classList.add('active');
+            
+            tabContents.forEach(content => content.classList.remove('active'));
+            document.getElementById('menu').classList.add('active');
+        });
+
+        // Call waiter button
+        callWaiterBtn.addEventListener('click', () => {
+            alert(`Waiter has been notified for Table ${currentTableNumber}. They will be with you shortly!`);
+        });
+
+        // Update payment summary
+        function updatePaymentSummary() {
+            const paymentOrderItems = document.getElementById('paymentOrderItems');
+            const paymentSubtotal = document.getElementById('paymentSubtotal');
+            const paymentTax = document.getElementById('paymentTax');
+            const paymentTotal = document.getElementById('paymentTotal');
+            const paymentTableNumber = document.getElementById('paymentTableNumber');
+            const orderTime = document.getElementById('orderTime');
+            
+            // Update table number and time
+            paymentTableNumber.textContent = `Table ${currentTableNumber}`;
+            const now = new Date();
+            orderTime.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            
+            // Clear existing items
+            paymentOrderItems.innerHTML = '';
+            
+            // Add cart items
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                const itemElement = document.createElement('div');
+                itemElement.className = 'payment-order-item';
+                itemElement.innerHTML = `
+                    <div class="payment-item-info">
+                        <div class="payment-item-name">${item.name}</div>
+                        <div class="payment-item-quantity">Qty: ${item.quantity} × $${item.price.toFixed(2)}</div>
+                    </div>
+                    <div class="payment-item-price">$${itemTotal.toFixed(2)}</div>
+                `;
+                paymentOrderItems.appendChild(itemElement);
+            });
+            
+            // Calculate totals
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const tax = subtotal * taxRate;
+            const total = subtotal + tax;
+            
+            paymentSubtotal.textContent = `$${subtotal.toFixed(2)}`;
+            paymentTax.textContent = `$${tax.toFixed(2)}`;
+            paymentTotal.textContent = `$${total.toFixed(2)}`;
+        }
+
+        // Format card number input
+        const cardNumberInput = document.getElementById('cardNumber');
+        cardNumberInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\s/g, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formattedValue;
+        });
+
+        // Format expiry date input
+        const expiryDateInput = document.getElementById('expiryDate');
+        expiryDateInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2, 4);
+            }
+            e.target.value = value;
+        });
+
+        // CVV input - numbers only
+        const cvvInput = document.getElementById('cvv');
+        cvvInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+
+        // Phone number formatting
+        const phoneInput = document.getElementById('phone');
+        phoneInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 0) {
+                if (value.length <= 3) {
+                    value = `+1 (${value}`;
+                } else if (value.length <= 6) {
+                    value = `+1 (${value.slice(0, 3)}) ${value.slice(3)}`;
+                } else {
+                    value = `+1 (${value.slice(0, 3)}) ${value.slice(3, 6)}-${value.slice(6, 10)}`;
+                }
+            }
+            e.target.value = value;
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set table number from URL or generate random
+            currentTableNumber = getTableNumber();
+            tableNumberDisplay.textContent = `Table ${currentTableNumber}`;
+            
+            // Initialize menu and cart
+            initializeMenu();
+            updateCart();
+        });
+    </script>
+</body>
+</html>
