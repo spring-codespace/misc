@@ -1,0 +1,171 @@
+@startuml
+' ER Diagram for Corporate Reporting Product Agreement Database
+' Hide the specific methods and show only fields
+hide methods
+hide circle
+
+' ============= LOOKUP TABLES =============
+entity agreement_status_lu {
+    *status_code: NVARCHAR(20) <<PK>>
+    --
+    description: NVARCHAR(100)
+    is_active: BIT
+}
+
+entity product_part_lu {
+    *product_part_code: NVARCHAR(30) <<PK>>
+    --
+    product_part_name: NVARCHAR(100)
+    description: NVARCHAR(255)
+    is_active: BIT
+}
+
+' ============= MAIN AGREEMENT TABLE =============
+entity corporate_reporting_agreement {
+    *agreement_id: BIGINT <<PK>> <<generated>>
+    --
+    agreement_name: NVARCHAR(200)
+    customer_id: NVARCHAR(50)
+    status_code: NVARCHAR(20) <<FK>>
+    pricing_order_ref: NVARCHAR(100) <<unique>>
+    pricing_type: NVARCHAR(20)
+    fixed_price: DECIMAL(15,2)
+    version_number: INT
+    parent_agreement_id: BIGINT <<FK>>
+    is_current_version: BIT
+    submitted_date: DATETIME
+    approved_date: DATETIME
+    effective_date: DATE
+    expiry_date: DATE
+    cart_expiry_date: DATETIME
+    created_by: NVARCHAR(100)
+    created_date: DATETIME
+    last_updated_by: NVARCHAR(100)
+    last_updated_date: DATETIME
+}
+
+' ============= JUNCTION TABLES =============
+entity agreement_product_part {
+    *agreement_product_part_id: BIGINT <<PK>> <<generated>>
+    --
+    agreement_id: BIGINT <<FK>>
+    product_part_code: NVARCHAR(30) <<FK>>
+    created_date: DATETIME
+}
+
+entity contact {
+    *contact_id: BIGINT <<PK>> <<generated>>
+    --
+    customer_id: NVARCHAR(50)
+    contact_name: NVARCHAR(200)
+    email: NVARCHAR(200)
+    is_active: BIT
+    created_date: DATETIME
+    last_updated_date: DATETIME
+    --
+    <<unique: customer_id, email>>
+}
+
+entity agreement_contact {
+    *agreement_contact_id: BIGINT <<PK>> <<generated>>
+    --
+    agreement_id: BIGINT <<FK>>
+    contact_id: BIGINT <<FK>>
+    is_primary: BIT
+    created_date: DATETIME
+}
+
+' ============= MESSAGE RECIPIENT HIERARCHY =============
+entity message_recipient {
+    *recipient_id: BIGINT <<PK>> <<generated>>
+    --
+    agreement_id: BIGINT <<FK>>
+    recipient_name: NVARCHAR(200)
+    recipient_order: INT
+    created_date: DATETIME
+}
+
+entity recipient_product_part {
+    *recipient_product_part_id: BIGINT <<PK>> <<generated>>
+    --
+    recipient_id: BIGINT <<FK>>
+    product_part_code: NVARCHAR(30) <<FK>>
+    created_date: DATETIME
+}
+
+entity recipient_product_part_account {
+    *id: BIGINT <<PK>> <<generated>>
+    --
+    recipient_product_part_id: BIGINT <<FK>>
+    account_number: NVARCHAR(50)
+    created_date: DATETIME
+}
+
+' ============= SUPPORT TABLES =============
+entity cart_item {
+    *cart_item_id: BIGINT <<PK>> <<generated>>
+    --
+    customer_id: NVARCHAR(50)
+    agreement_id: BIGINT <<FK>>
+    added_to_cart_date: DATETIME
+    cart_expiry_date: DATETIME
+    is_active: BIT
+}
+
+entity user_session {
+    *session_id: NVARCHAR(100) <<PK>>
+    --
+    customer_id: NVARCHAR(50)
+    login_time: DATETIME
+    last_activity_time: DATETIME
+    session_data: NVARCHAR(MAX)
+    is_active: BIT
+}
+
+entity agreement_history {
+    *history_id: BIGINT <<PK>> <<generated>>
+    --
+    agreement_id: BIGINT <<FK>>
+    action_type: NVARCHAR(50)
+    old_status: NVARCHAR(20)
+    new_status: NVARCHAR(20)
+    changed_by: NVARCHAR(100)
+    change_date: DATETIME
+    change_reason: NVARCHAR(500)
+    snapshot_data: NVARCHAR(MAX)
+}
+
+' ============= RELATIONSHIPS =============
+
+' Agreement relationships
+corporate_reporting_agreement ||--o{ agreement_product_part : contains
+corporate_reporting_agreement ||--o{ agreement_contact : has
+corporate_reporting_agreement ||--o{ message_recipient : defines
+corporate_reporting_agreement ||--o{ agreement_history : tracks
+corporate_reporting_agreement ||--o| cart_item : "appears in"
+corporate_reporting_agreement }o--|| corporate_reporting_agreement : "parent/child version"
+
+' Lookup relationships
+agreement_status_lu ||--o{ corporate_reporting_agreement : "defines status"
+product_part_lu ||--o{ agreement_product_part : "categorizes"
+product_part_lu ||--o{ recipient_product_part : "categorizes"
+
+' Contact relationships
+contact ||--o{ agreement_contact : "linked to"
+
+' Message recipient hierarchy
+message_recipient ||--o{ recipient_product_part : "has"
+recipient_product_part ||--o{ recipient_product_part_account : "assigns accounts to"
+
+' Notes and styling
+title Corporate Reporting Product Agreement Database\nER Diagram (PlantUML)
+
+legend right
+    == Relationships ==
+    |<color:blue>--o{</color>| One to Many
+    |<color:blue>||--o{</color>| One to Many (mandatory)
+    |<color:blue>}o--||</color>| Many to One (optional)
+    |<color:blue>||--||</color>| One to One
+endlegend
+
+@enduml
