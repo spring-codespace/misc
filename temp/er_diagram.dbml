@@ -1,0 +1,196 @@
+//// CAMT Report Generator — Corporate Reporting Agreement Schema
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum agreement_version_status {
+  DRAFT        [note: "Created, awaiting approval"]
+  ACTIVE       [note: "Approved and live. Exactly one ACTIVE version per agreement at any time."]
+  SUPERSEDED   [note: "Was ACTIVE, replaced by newer approved version"]
+  DRAFT_CANCEL [note: "Cancellation pending approval"]
+  CANCELLED    [note: "Agreement terminated"]
+  EXPIRED      [note: "Cart item expired before approval. Set by nightly job."]
+  INVALIDATED  [note: "A sibling DRAFT or DRAFT_CANCEL was approved, orphaning this version."]
+}
+
+enum message_recipient_status {
+  DRAFT     [note: "On a DRAFT or DRAFT_CANCEL version, awaiting approval"]
+  ACTIVE    [note: "Set when parent version is approved as ACTIVE"]
+  CANCELLED [note: "Recipient was replaced or removed (set immediately at edit time), or agreement was cancelled (set on approval)"]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PHASE (A) — AGREEMENT MANAGEMENT
+// ─────────────────────────────────────────────────────────────────────────────
+
+Table agreement {
+  id             uuid      [pk, note: "Stable across all versions. One-time generated value e.g. 6xxxxxREPxxx"]
+  agreement_name varchar   [not null, note: "Frozen after creation — never updated across versions"]
+  corporate_id   varchar   [not null, note: "External corporate customer identifier"]
+  created_at     timestamp [not null]
+
+  note: "Stable anchor record. One row per agreement regardless of how many versions exist."
+}
+
+Table agreement_version {
+  id                       uuid                     [pk]
+  agreement_id             uuid                     [not null, ref: > agreement.id]
+  version_number           int                      [not null, note: "Increments on each edit or cancel. Starts at 1."]
+  status                   agreement_version_status [not null]
+  pricing_type             varchar                  [not null, note: "STANDARD | INDIVIDUAL"]
+  pricing_order_ref        varchar                  [not null, note: "Always stored. Updated per version."]
+  debit_account_bban       varchar                  [not null, note: "Account BBAN for debiting the monthly fees"]
+
+  // GAP — PENDING BUSINESS CONFIRMATION
+  branched_from_version_id uuid      [ref: > agreement_version.id, note: "GAP: The ACTIVE version this draft was based on. Used to detect stale drafts at approval time."]
+  invalidated_at           timestamp [note: "GAP: Set when a sibling DRAFT or DRAFT_CANCEL is approved, orphaning this version."]
+  expired_at               timestamp [note: "GAP: Set by nightly job when cart item expires without approval."]
+  // END GAP
+
+  created_at               timestamp [not null]
+  activated_at             timestamp [note: "Set when status → ACTIVE"]
+  superseded_at            timestamp [note: "Set when a newer version is approved"]
+  cancelled_at             timestamp [note: "Set when status → CANCELLED"]
+
+  note: "One row per version. Exactly one ACTIVE version per agreement at any time. SUPERSEDED = previously active, now replaced."
+}
+
+Table agreement_contact {
+  id                   uuid      [pk]
+  agreement_version_id uuid      [not null, ref: > agreement_version.id]
+  contact_name         varchar   [not null]
+  contact_email        varchar   [not null]
+  created_at           timestamp [not null]
+
+  note: "Editable per version. At least one contact required. Copied forward on edit."
+}
+
+Table message_recipient {
+  id                       uuid                     [pk]
+  agreement_version_id     uuid                     [not null, ref: > agreement_version.id]
+  recipient_id             varchar                  [not null, note: "SignerID. Fetched from corporate connect API."]
+  status                   message_recipient_status [not null]
+  replaced_by_recipient_id uuid                     [ref: > message_recipient.id, note: "1-to-1 explicit replace only. NULL for removed recipients (no replacement). Points to new recipient row in same version."]
+  created_at               timestamp                [not null]
+  activated_at             timestamp                [note: "Set when parent version is approved and version status = ACTIVE"]
+  cancelled_at             timestamp                [note: "For replaced or removed: set immediately at edit time, not on approval. For full agreement cancel: set on approval when parent version status = CANCELLED."]
+
+  note: "Replace is strictly 1-to-1. A split (one → two) is modelled as remove + two adds. CANCELLED recipients carry no product_part_assignment rows — their assignments are readable from the prior version."
+}
+
+Table product_part_assignment {
+  id                   uuid      [pk]
+  message_recipient_id uuid      [not null, ref: > message_recipient.id]
+  product_part         varchar   [not null, note: "CAMT052_BALANCES_ONLY | CAMT052_BALANCES_TX | CAMT053_STANDARD | CAMT053_EXTENDED | CAMT054_DEBIT | CAMT054_CREDIT"]
+  created_at           timestamp [not null]
+
+  note: "One row per recipient-productpart pair. Only created for DRAFT and ACTIVE recipients. CANCELLED recipients carry no assignments."
+}
+
+Table payment_type_assignment {
+  id                         uuid      [pk]
+  product_part_assignment_id uuid      [not null, ref: > product_part_assignment.id]
+  payment_type_id            varchar   [not null]
+  created_at                 timestamp [not null]
+
+  note: "Only applicable for CAMT054_CREDIT product part. One row per payment type selected. At least one payment type required when product_part = CAMT054_CREDIT."
+}
+
+Table account_assignment {
+  id                         uuid       [pk]
+
+  // Exactly one of these two FKs is populated — never both.
+  // For all product parts except CAMT054_CREDIT → product_part_assignment_id is set.
+  // For CAMT054_CREDIT → payment_type_assignment_id is set (accounts are per payment type).
+  product_part_assignment_id uuid       [null, ref: > product_part_assignment.id, note: "Populated for all product parts EXCEPT CAMT054_CREDIT. NULL for CAMT054_CREDIT."]
+  payment_type_assignment_id uuid       [null, ref: > payment_type_assignment.id, note: "Populated ONLY for CAMT054_CREDIT. NULL for all other product parts."]
+
+  account_bban                 varchar    [not null, note: "Fetched from accounts API. No exclusivity constraint — same account_bban can appear across multiple recipients for the same product_part within a version."]
+  account_iban               varchar    [not null]
+  currency                   varchar(3) [not null]
+  created_at                 timestamp  [not null]
+
+  note: "Exactly one of product_part_assignment_id or payment_type_assignment_id is populated. Never both. For CAMT054_CREDIT, accounts belong to a specific payment type. For all other product parts, accounts belong directly to the product part assignment."
+}
+
+Table alias_assignment {
+  id                         uuid      [pk]
+  payment_type_assignment_id uuid      [not null, ref: > payment_type_assignment.id]
+  alias_id                   varchar   [not null]
+  created_at                 timestamp [not null]
+
+  note: "Only applicable for CAMT054_CREDIT. Each payment type carries either accounts (account_assignment) or aliases (alias_assignment) — never both."
+}
+
+Table cart_item {
+  id                   uuid      [pk]
+  agreement_version_id uuid      [not null, ref: - agreement_version.id, note: "One cart item per version"]
+  corporate_id         varchar   [not null, note: "Consistent with agreement.corporate_id"]
+  expires_at           timestamp [not null, note: "30 days from creation"]
+  approved_at          timestamp [note: "Set when customer approves from cart"]
+  expired_at           timestamp [note: "Set by nightly job when expires_at is breached. Cascades to agreement_version.status = EXPIRED."]
+  created_at           timestamp [not null]
+
+  note: "One cart item per version. A DRAFT and a DRAFT_CANCEL can coexist in cart for the same agreement simultaneously. Items are accessible for 30 days across browser sessions."
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PHASE (B) — REPORT GENERATION & DELIVERY
+// ─────────────────────────────────────────────────────────────────────────────
+
+Table report_schedule {
+  id                    uuid      [pk]
+  product_part          varchar   [not null, note: "CAMT052_BALANCES_ONLY | CAMT052_BALANCES_TX | CAMT053_STANDARD | CAMT053_EXTENDED | CAMT054_DEBIT | CAMT054_CREDIT"]
+  cron_expression       varchar   [not null, note: "Quartz cron expression. Fixed per product part for all agreements."]
+  sftp_path             varchar   [not null, note: "/CAMT/CAMT.052 | /CAMT/CAMT.053 | /CAMT/CAMT.054"]
+  stored_procedure_name varchar   [not null, note: "Name of the stored procedure to call on the reporting DB for this product part."]
+  is_active             boolean   [not null, default: true]
+  created_at            timestamp [not null]
+  updated_at            timestamp [not null]
+
+  note: "One row per product part. Drives Quartz job configuration and SFTP routing. Managed by operations team."
+}
+
+Table report_job {
+  id                         uuid          [pk]
+  agreement_version_id       uuid          [not null, ref: > agreement_version.id]
+  message_recipient_id       uuid          [not null, ref: > message_recipient.id]
+  product_part_assignment_id uuid          [not null, ref: > product_part_assignment.id]
+  product_part               varchar       [not null]
+  corporate_id               varchar       [not null, note: "Denormalised for easy querying without joins. Consistent with agreement.corporate_id."]
+  recipient_id               varchar       [not null, note: "Denormalised from message_recipient for easy querying without joins."]
+  account_bbans              nvarchar(max) [not null, note: "JSON array of account BBANs included in this report. nvarchar(max) used — text type is deprecated in SQL Server."]
+  reporting_date             date          [not null, note: "The business date this report covers."]
+  trigger_type               varchar       [not null, note: "SCHEDULED | ON_DEMAND"]
+  triggered_by               varchar       [null, note: "userId for ON_DEMAND triggers. NULL for SCHEDULED."]
+  status                     varchar       [not null, note: "PENDING | IN_PROGRESS | DELIVERED | FAILED"]
+  attempt_count              int           [not null, default: 0]
+  max_attempts               int           [not null, default: 10]
+  next_retry_at              timestamp     [null, note: "Computed after each failure using exponential backoff."]
+  filename                   varchar       [null, note: "Set after successful XML generation. Pattern: {CAMT_TYPE}_{corporateId}_{recipientId}_{reportingDate}_{timestamp}.xml"]
+  file_size_bytes            int           [null]
+  sftp_path                  varchar       [null, note: "Full SFTP path where file was uploaded."]
+  sftp_status                varchar       [null, note: "PENDING | SUCCESS | FAILED"]
+  sftp_delivered_at          timestamp     [null]
+  mq_status                  varchar       [null, note: "PENDING | SUCCESS | FAILED"]
+  mq_delivered_at            timestamp     [null]
+  failure_reason             varchar       [null, note: "Last error message. Overwritten on each retry. Full history in report_job_attempt."]
+  created_at                 timestamp     [not null]
+  updated_at                 timestamp     [not null]
+
+  note: "One row per (recipient, product_part) per schedule cycle. Denormalised fields (corporate_id, recipient_id, account_bbans) preserve an accurate snapshot of what was in scope at generation time — unaffected by subsequent agreement edits. Retained for audit and replay."
+}
+
+Table report_job_attempt {
+  id             uuid      [pk]
+  report_job_id  uuid      [not null, ref: > report_job.id]
+  attempt_number int       [not null, note: "1 through 10"]
+  status         varchar   [not null, note: "SUCCESS | FAILED"]
+  failure_reason varchar   [null]
+  attempted_at   timestamp [not null]
+  duration_ms    int       [null, note: "How long this attempt took in milliseconds."]
+
+  note: "Immutable attempt history per job. report_job.failure_reason retains only the latest; this table retains all. Never overwritten — always appended."
+}
+
