@@ -1,0 +1,1169 @@
+openapi: 3.0.3
+info:
+  title: Corporate Reporting Agreement API
+  version: 1.1.0
+  description: >
+    Manages the lifecycle of Corporate Reporting Product Agreements
+    for ISO 20022 Camt report generation and delivery.
+
+servers:
+  - url: https://api.example.com/v1
+
+tags:
+  - name: Agreements
+    description: Agreement creation, listing and retrieval
+  - name: Edit & Cancel
+    description: Spawning new draft versions from active agreements
+  - name: Cart
+    description: Cart management and approval workflow
+
+# ─────────────────────────────────────────
+# SHARED COMPONENTS
+# ─────────────────────────────────────────
+components:
+
+  # ── Enums ──────────────────────────────
+  schemas:
+
+    CamtProductPart:
+      type: string
+      description: >
+        The CAMT product part as stored and returned by this API.
+        CAMT054_CREDIT is never submitted directly — it is inferred
+        server-side when the submitted product part is recognised as
+        a payment type value (e.g. payment_type_1). All other values
+        are submitted and stored as-is.
+      enum:
+        - CAMT052_BALANCES_ONLY
+        - CAMT052_BALANCES_TX
+        - CAMT053_STANDARD
+        - CAMT053_EXTENDED
+        - CAMT054_DEBIT
+        - CAMT054_CREDIT
+
+    AgreementVersionStatus:
+      type: string
+      enum:
+        - DRAFT
+        - ACTIVE
+        - SUPERSEDED
+        - DRAFT_CANCEL
+        - CANCELLED
+        - EXPIRED
+        - INVALIDATED
+
+    RecipientStatus:
+      type: string
+      enum:
+        - DRAFT
+        - ACTIVE
+        - CANCELLED
+
+    PricingType:
+      type: string
+      enum:
+        - STANDARD
+        - INDIVIDUAL
+
+  # ── Reusable request building blocks ───
+
+    ContactInput:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          example: John Smith
+        email:
+          type: string
+          format: email
+          example: john@abccorp.com
+
+    AccountInput:
+      type: object
+      description: A single bank account to be assigned.
+      required: [accountBban, accountIban, currency]
+      properties:
+        accountBban:
+          type: string
+          example: "12345678901"
+        accountIban:
+          type: string
+          example: "SE3550000000054910000003"
+        currency:
+          type: string
+          example: "SEK"
+
+    ProductPartAssignmentInput:
+      type: object
+      description: >
+        One product part assignment for a recipient.
+
+        The `productPart` field accepts either a recognised CAMT product
+        part value (e.g. CAMT052_BALANCES_TX, CAMT054_DEBIT) or a payment
+        type value from an external system (e.g. payment_type_1).
+
+        When the server receives a payment type value it:
+          1. Infers product part = CAMT054_CREDIT
+          2. Creates a product_part_assignment with product_part = CAMT054_CREDIT
+          3. Records the submitted value as a payment_type_assignment row
+
+        For CAMT054_CREDIT (submitted via payment type values):
+          - accounts and/or aliases may be provided
+          - at least one account or one alias is required
+
+        For all other CAMT product parts:
+          - only accounts are applicable
+          - at least one account is required
+          - aliases are ignored if submitted
+      required: [productPart]
+      properties:
+        productPart:
+          type: string
+          description: >
+            A CAMT product part value or a payment type value.
+            Payment type values are mapped to CAMT054_CREDIT server-side.
+          example: CAMT052_BALANCES_TX
+        accounts:
+          type: array
+          description: >
+            Required for non-CAMT054_CREDIT product parts.
+            For CAMT054_CREDIT (payment type): optional if aliases are provided,
+            but at least one account or alias must be present.
+          items:
+            $ref: '#/components/schemas/AccountInput'
+        aliases:
+          type: array
+          description: >
+            Applicable only for CAMT054_CREDIT (payment type submissions).
+            Optional if accounts are provided, but at least one account
+            or alias must be present.
+          items:
+            type: string
+            description: Alias ID string
+          example: ["alias_001", "alias_002"]
+
+    RecipientInput:
+      type: object
+      required: [recipientId, productPartAssignments]
+      properties:
+        recipientId:
+          type: string
+          description: SignerID fetched from external corporate connect API.
+          example: REC_DAILY
+        productPartAssignments:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ProductPartAssignmentInput'
+
+    PricingInput:
+      type: object
+      required: [pricingType, pricingOrderRef, debitAccountBban]
+      properties:
+        pricingType:
+          $ref: '#/components/schemas/PricingType'
+        pricingOrderRef:
+          type: string
+          example: ORD-2024-001
+        debitAccountBban:
+          type: string
+          description: BBAN of the account to be debited for monthly fees.
+          example: "12345678901"
+
+  # ── Reusable response building blocks ──
+
+    ContactResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+
+    AccountResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        accountBban:
+          type: string
+          example: "12345678901"
+        accountIban:
+          type: string
+          example: "SE3550000000054910000003"
+        currency:
+          type: string
+          example: "SEK"
+
+    PaymentTypeAssignmentResponse:
+      type: object
+      description: >
+        A payment type under a CAMT054_CREDIT product part assignment.
+        Accounts and aliases are both returnable — a payment type may
+        have accounts, aliases, or both.
+      properties:
+        id:
+          type: string
+          format: uuid
+        paymentType:
+          type: string
+          description: The original payment type value submitted by the caller.
+          example: payment_type_1
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountResponse'
+        aliases:
+          type: array
+          items:
+            type: string
+          example: ["alias_001", "alias_002"]
+
+    ProductPartAssignmentResponse:
+      type: object
+      description: >
+        A product part assignment for a recipient.
+        For CAMT054_CREDIT, paymentTypeAssignments is populated and
+        accounts at this level is empty.
+        For all other product parts, accounts is populated directly
+        and paymentTypeAssignments is empty.
+      properties:
+        id:
+          type: string
+          format: uuid
+        productPart:
+          $ref: '#/components/schemas/CamtProductPart'
+        accounts:
+          type: array
+          description: Populated for non-CAMT054_CREDIT product parts only.
+          items:
+            $ref: '#/components/schemas/AccountResponse'
+        paymentTypeAssignments:
+          type: array
+          description: Populated for CAMT054_CREDIT only.
+          items:
+            $ref: '#/components/schemas/PaymentTypeAssignmentResponse'
+
+    RecipientResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        recipientId:
+          type: string
+        status:
+          $ref: '#/components/schemas/RecipientStatus'
+        replacedByRecipientId:
+          type: string
+          format: uuid
+          nullable: true
+          description: >
+            Set only on explicit 1-to-1 replace. NULL for removed
+            recipients (no replacement).
+        productPartAssignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductPartAssignmentResponse'
+        activatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        cancelledAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    AgreementVersionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        agreementId:
+          type: string
+          format: uuid
+        versionNumber:
+          type: integer
+        status:
+          $ref: '#/components/schemas/AgreementVersionStatus'
+        pricingType:
+          $ref: '#/components/schemas/PricingType'
+        pricingOrderRef:
+          type: string
+        debitAccountBban:
+          type: string
+          description: BBAN of the account debited for monthly fees.
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContactResponse'
+        recipients:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipientResponse'
+        createdAt:
+          type: string
+          format: date-time
+        activatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        supersededAt:
+          type: string
+          format: date-time
+          nullable: true
+        cancelledAt:
+          type: string
+          format: date-time
+          nullable: true
+        branchedFromVersionId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The ACTIVE version this draft was branched from. Null for version 1.
+        expiredAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Set by nightly job when cart item expires without approval.
+        invalidatedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Set when a sibling DRAFT or DRAFT_CANCEL is approved, orphaning this version.
+
+    AgreementSummaryResponse:
+      type: object
+      description: >
+        Lightweight summary used in list views. Does not include
+        full recipient and assignment detail — use GET
+        /agreements/{agreementId}/versions/{versionId} for full detail.
+      properties:
+        agreementId:
+          type: string
+          format: uuid
+        agreementName:
+          type: string
+        corporateId:
+          type: string
+        currentVersion:
+          type: object
+          description: The current ACTIVE or CANCELLED version summary.
+          properties:
+            versionId:
+              type: string
+              format: uuid
+            versionNumber:
+              type: integer
+            status:
+              $ref: '#/components/schemas/AgreementVersionStatus'
+            activatedAt:
+              type: string
+              format: date-time
+              nullable: true
+            cancelledAt:
+              type: string
+              format: date-time
+              nullable: true
+            recipientSummaries:
+              type: array
+              description: Recipient-level status summary for list view.
+              items:
+                type: object
+                properties:
+                  recipientId:
+                    type: string
+                  status:
+                    $ref: '#/components/schemas/RecipientStatus'
+        pendingCartItems:
+          type: array
+          description: Any DRAFT or DRAFT_CANCEL versions currently in cart.
+          items:
+            type: object
+            properties:
+              cartItemId:
+                type: string
+                format: uuid
+              versionId:
+                type: string
+                format: uuid
+              versionStatus:
+                $ref: '#/components/schemas/AgreementVersionStatus'
+              expiresAt:
+                type: string
+                format: date-time
+
+    CartItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        corporateId:
+          type: string
+        agreementVersion:
+          $ref: '#/components/schemas/AgreementVersionResponse'
+        expiresAt:
+          type: string
+          format: date-time
+        approvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiredAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: AGREEMENT_NOT_FOUND
+        message:
+          type: string
+          example: No agreement found with the given ID
+        details:
+          type: object
+          nullable: true
+
+  # ── Common error responses ──────────────
+  responses:
+
+    400BadRequest:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    404NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    409Conflict:
+      description: >
+        Business rule conflict — e.g. agreement already has a pending
+        cart item of the same type, or approval of a stale draft.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    422UnprocessableEntity:
+      description: >
+        Semantically invalid request — e.g. attempting to edit
+        a CANCELLED agreement.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+# ─────────────────────────────────────────
+# ENDPOINTS
+# ─────────────────────────────────────────
+paths:
+
+  # ── 1. LIST AGREEMENTS ─────────────────
+  /agreements:
+    get:
+      tags: [Agreements]
+      summary: List agreements for a customer
+      description: >
+        Returns agreements for a given corporate customer with optional filters.
+        Each item includes the current active (or cancelled) version summary and
+        any pending cart items. For full version detail including all recipients
+        and assignments, use GET /agreements/{agreementId}/versions/{versionId}.
+      parameters:
+        - name: corporateId
+          in: query
+          required: true
+          schema:
+            type: string
+          example: CORP_ABC001
+        - name: status
+          in: query
+          required: false
+          description: >
+            Filter by agreement version status. Accepts comma-separated
+            values. If omitted, returns ACTIVE + any pending DRAFT or
+            DRAFT_CANCEL.
+          schema:
+            type: string
+          example: ACTIVE,DRAFT,DRAFT_CANCEL
+        - name: includeSuperseded
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: >
+            When true, includes SUPERSEDED versions in the response.
+            Useful for audit views.
+        - name: includeCancelled
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: When true, includes CANCELLED agreements.
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Paginated list of agreement summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AgreementSummaryResponse'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      pageSize:
+                        type: integer
+                      totalCount:
+                        type: integer
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+
+  # ── 2. CREATE AGREEMENT ────────────────
+    post:
+      tags: [Agreements]
+      summary: Create a new agreement
+      description: >
+        Submitted once on final wizard confirmation. Creates the agreement,
+        version 1 with status DRAFT, all recipients with status DRAFT,
+        and a cart item expiring in 30 days. Wizard state is held
+        entirely in the frontend until this point.
+
+        Product part handling:
+          - Standard CAMT values (e.g. CAMT052_BALANCES_TX) are stored as-is.
+          - Payment type values (e.g. payment_type_1) are inferred as
+            CAMT054_CREDIT server-side; the submitted value is stored as
+            the payment type under that product part assignment.
+          - CAMT054_CREDIT is never submitted directly.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - corporateId
+                - agreementName
+                - contacts
+                - recipients
+                - pricing
+              properties:
+                corporateId:
+                  type: string
+                  example: CORP_ABC001
+                agreementName:
+                  type: string
+                  example: ABC Corp Agreement
+                contacts:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: '#/components/schemas/ContactInput'
+                recipients:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: '#/components/schemas/RecipientInput'
+                pricing:
+                  $ref: '#/components/schemas/PricingInput'
+            example:
+              corporateId: CORP_ABC001
+              agreementName: ABC Corp Agreement
+              contacts:
+                - name: John Smith
+                  email: john@abccorp.com
+                - name: Finance Team
+                  email: finance@abccorp.com
+              recipients:
+                - recipientId: REC_DAILY
+                  productPartAssignments:
+                    - productPart: CAMT052_BALANCES_TX
+                      accounts:
+                        - accountBban: "12345678901"
+                          accountIban: "SE3550000000054910000003"
+                          currency: SEK
+                        - accountBban: "12345678902"
+                          accountIban: "SE3550000000054910000004"
+                          currency: SEK
+                    - productPart: payment_type_1
+                      accounts:
+                        - accountBban: "12345678901"
+                          accountIban: "SE3550000000054910000003"
+                          currency: SEK
+                      aliases:
+                        - alias_001
+                        - alias_002
+                - recipientId: REC_MONTHLY
+                  productPartAssignments:
+                    - productPart: CAMT053_STANDARD
+                      accounts:
+                        - accountBban: "12345678901"
+                          accountIban: "SE3550000000054910000003"
+                          currency: SEK
+              pricing:
+                pricingType: STANDARD
+                pricingOrderRef: ORD-2024-001
+                debitAccountBban: "12345678901"
+      responses:
+        '201':
+          description: Agreement created as DRAFT, added to cart
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agreementId:
+                    type: string
+                    format: uuid
+                  versionId:
+                    type: string
+                    format: uuid
+                  cartItemId:
+                    type: string
+                    format: uuid
+                  cartExpiresAt:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+
+  # ── 3. GET AGREEMENT (current version) ─
+  /agreements/{agreementId}:
+    get:
+      tags: [Agreements]
+      summary: Get current ACTIVE or CANCELLED version of an agreement
+      description: >
+        Returns the full detail of the current version — ACTIVE if the
+        agreement is live, CANCELLED if it has been terminated. Includes
+        all recipients and their product part assignments at full depth.
+        CANCELLED recipients are included for audit visibility.
+
+        SUPERSEDED versions are not returned here — use GET
+        /agreements/{agreementId}/versions for history.
+      parameters:
+        - name: agreementId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Full agreement version detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgreementVersionResponse'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+
+  # ── 4. GET VERSION HISTORY ─────────────
+  /agreements/{agreementId}/versions:
+    get:
+      tags: [Agreements]
+      summary: Get all versions of an agreement
+      description: >
+        Returns all versions of an agreement in descending version
+        order. Used for the audit/history view. Each version includes
+        full recipient and assignment detail.
+      parameters:
+        - name: agreementId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: false
+          description: >
+            Filter by version status. Comma-separated.
+            Omit to return all versions.
+          schema:
+            type: string
+          example: ACTIVE,SUPERSEDED
+      responses:
+        '200':
+          description: List of all versions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agreementId:
+                    type: string
+                    format: uuid
+                  agreementName:
+                    type: string
+                  versions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AgreementVersionResponse'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+
+  # ── 5. GET SPECIFIC VERSION ────────────
+  /agreements/{agreementId}/versions/{versionId}:
+    get:
+      tags: [Agreements]
+      summary: Get a specific version of an agreement
+      description: >
+        Returns full detail of a specific version. Used to pre-fill
+        the edit wizard and to show historical version detail in the
+        audit view.
+      parameters:
+        - name: agreementId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Full version detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgreementVersionResponse'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+
+  # ── 6. EDIT AGREEMENT ──────────────────
+  /agreements/{agreementId}/edit:
+    post:
+      tags: [Edit & Cancel]
+      summary: Submit an edited agreement
+      description: >
+        Creates a new DRAFT version (N+1) branched from the current
+        ACTIVE version. The current ACTIVE version is untouched until
+        the new draft is approved from the cart.
+
+        Business rules enforced:
+          - Agreement must have an ACTIVE version
+          - Agreement must not already have a DRAFT in the cart
+            (only one pending edit at a time)
+          - Replacement is strictly 1-to-1 (replacedByRecipientId
+            must map to exactly one REPLACE_NEW entry in the payload)
+
+        Recipient actions:
+          - KEEP — unchanged, copied forward with same assignments
+          - ADD — brand new recipient
+          - REPLACE_OLD — existing recipient being replaced; set
+              replacedByRecipientId to the recipientId of the
+              corresponding REPLACE_NEW entry in this payload
+          - REPLACE_NEW — the incoming replacement recipient
+          - REMOVE — recipient removed with no replacement
+
+        Product part handling:
+          - Standard CAMT values (e.g. CAMT052_BALANCES_TX) are stored as-is
+          - Payment type values (e.g. payment_type_1) are inferred as
+            CAMT054_CREDIT server-side; the submitted value is stored
+            as the payment type under that product part assignment
+          - CAMT054_CREDIT is never submitted directly
+      parameters:
+        - name: agreementId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - corporateId
+                - contacts
+                - recipients
+                - pricing
+              properties:
+                corporateId:
+                  type: string
+                  example: CORP_ABC001
+                contacts:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: '#/components/schemas/ContactInput'
+                recipients:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [recipientId, action]
+                    properties:
+                      recipientId:
+                        type: string
+                        description: >
+                          For KEEP, REPLACE_OLD, REMOVE: the existing
+                          recipient ID from the current active version.
+                          For ADD and REPLACE_NEW: the new recipient ID
+                          fetched from the external corporate connect API.
+                      action:
+                        type: string
+                        enum: [KEEP, ADD, REPLACE_OLD, REPLACE_NEW, REMOVE]
+                      replacedByRecipientId:
+                        type: string
+                        nullable: true
+                        description: >
+                          Required when action = REPLACE_OLD.
+                          Must match the recipientId of a REPLACE_NEW
+                          entry in this same payload.
+                      productPartAssignments:
+                        type: array
+                        description: >
+                          Required for KEEP, ADD, REPLACE_NEW.
+                          Must be omitted for REPLACE_OLD and REMOVE.
+                        items:
+                          $ref: '#/components/schemas/ProductPartAssignmentInput'
+                pricing:
+                  $ref: '#/components/schemas/PricingInput'
+            example:
+              corporateId: CORP_ABC001
+              contacts:
+                - name: John Smith
+                  email: john@abccorp.com
+              recipients:
+                - recipientId: REC_DAILY
+                  action: REPLACE_OLD
+                  replacedByRecipientId: REC_DAILY_V2
+                - recipientId: REC_DAILY_V2
+                  action: REPLACE_NEW
+                  productPartAssignments:
+                    - productPart: CAMT052_BALANCES_TX
+                      accounts:
+                        - accountBban: "12345678901"
+                          accountIban: "SE3550000000054910000003"
+                          currency: SEK
+                    - productPart: payment_type_1
+                      accounts:
+                        - accountBban: "12345678901"
+                          accountIban: "SE3550000000054910000003"
+                          currency: SEK
+                      aliases:
+                        - alias_001
+                - recipientId: REC_MONTHLY
+                  action: KEEP
+                  productPartAssignments:
+                    - productPart: CAMT053_STANDARD
+                      accounts:
+                        - accountBban: "12345678901"
+                          accountIban: "SE3550000000054910000003"
+                          currency: SEK
+              pricing:
+                pricingType: STANDARD
+                pricingOrderRef: ORD-2024-002
+                debitAccountBban: "12345678901"
+      responses:
+        '201':
+          description: New DRAFT version created and added to cart
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agreementId:
+                    type: string
+                    format: uuid
+                  versionId:
+                    type: string
+                    format: uuid
+                  versionNumber:
+                    type: integer
+                  cartItemId:
+                    type: string
+                    format: uuid
+                  cartExpiresAt:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '409':
+          $ref: '#/components/responses/409Conflict'
+        '422':
+          $ref: '#/components/responses/422UnprocessableEntity'
+
+  # ── 7. CANCEL AGREEMENT ────────────────
+  /agreements/{agreementId}/cancel:
+    post:
+      tags: [Edit & Cancel]
+      summary: Initiate agreement cancellation
+      description: >
+        Creates a new DRAFT_CANCEL version (N+1). All recipients and
+        their assignments are copied forward as DRAFT. The current
+        ACTIVE version is untouched until the cancellation is approved
+        from the cart.
+
+        Business rules enforced:
+          - Agreement must have an ACTIVE version
+          - Agreement must not already have a DRAFT_CANCEL in the cart
+
+        Note: A DRAFT (edit) and a DRAFT_CANCEL can coexist in
+        the cart simultaneously for the same agreement.
+      parameters:
+        - name: agreementId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [corporateId]
+              properties:
+                corporateId:
+                  type: string
+                  example: CORP_ABC001
+                cancellationReason:
+                  type: string
+                  nullable: true
+                  description: Optional free-text reason for cancellation.
+                  example: Switching to a different provider
+      responses:
+        '201':
+          description: DRAFT_CANCEL version created and added to cart
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agreementId:
+                    type: string
+                    format: uuid
+                  versionId:
+                    type: string
+                    format: uuid
+                  versionNumber:
+                    type: integer
+                  cartItemId:
+                    type: string
+                    format: uuid
+                  cartExpiresAt:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '409':
+          $ref: '#/components/responses/409Conflict'
+        '422':
+          $ref: '#/components/responses/422UnprocessableEntity'
+
+  # ── 8. LIST CART ITEMS ─────────────────
+  /cart:
+    get:
+      tags: [Cart]
+      summary: List cart items for a corporate customer
+      description: >
+        Returns all non-expired, non-approved cart items for a
+        corporate customer. Each item includes the full version detail
+        so the customer can review before approving.
+      parameters:
+        - name: corporateId
+          in: query
+          required: true
+          schema:
+            type: string
+          example: CORP_ABC001
+      responses:
+        '200':
+          description: List of active cart items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CartItemResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+
+  # ── 9. APPROVE CART ITEM ───────────────
+  /cart/{cartItemId}/approve:
+    post:
+      tags: [Cart]
+      summary: Approve a cart item
+      description: >
+        Approves the agreement version associated with this cart item.
+        Behaviour depends on the version status:
+
+        If version status = DRAFT:
+          - Previous ACTIVE version → SUPERSEDED
+          - This version → ACTIVE
+          - All DRAFT recipients on this version → ACTIVE
+          - Sibling DRAFT or DRAFT_CANCEL versions for the same
+            agreement → INVALIDATED; their cart items expired
+
+        If version status = DRAFT_CANCEL:
+          - Previous ACTIVE version → SUPERSEDED
+          - This version → CANCELLED
+          - All DRAFT recipients on this version → CANCELLED
+          - Sibling DRAFT or DRAFT_CANCEL versions for the same
+            agreement → INVALIDATED; their cart items expired
+
+        Business rules enforced:
+          - Cart item must not be expired
+          - Cart item must not already be approved
+          - branchedFromVersionId must still equal the current ACTIVE
+            version (stale draft check — rejects with 409 if not)
+      parameters:
+        - name: cartItemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [corporateId]
+              properties:
+                corporateId:
+                  type: string
+                  example: CORP_ABC001
+      responses:
+        '200':
+          description: Cart item approved, version activated or cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cartItemId:
+                    type: string
+                    format: uuid
+                  agreementId:
+                    type: string
+                    format: uuid
+                  approvedVersionId:
+                    type: string
+                    format: uuid
+                  approvedVersionStatus:
+                    $ref: '#/components/schemas/AgreementVersionStatus'
+                  supersededVersionId:
+                    type: string
+                    format: uuid
+                    nullable: true
+                  invalidatedVersionIds:
+                    type: array
+                    description: IDs of any sibling versions invalidated by this approval.
+                    items:
+                      type: string
+                      format: uuid
+                  approvedAt:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '409':
+          $ref: '#/components/responses/409Conflict'
+
+  # ── 10. DISCARD CART ITEM ──────────────
+  /cart/{cartItemId}/discard:
+    post:
+      tags: [Cart]
+      summary: Manually discard a cart item before expiry
+      description: >
+        Allows the customer to manually abandon a pending DRAFT or
+        DRAFT_CANCEL before the 30-day expiry. Sets the version
+        status to EXPIRED and cart_item.expired_at to now. The
+        current ACTIVE version of the agreement is unaffected.
+      parameters:
+        - name: cartItemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [corporateId]
+              properties:
+                corporateId:
+                  type: string
+                  example: CORP_ABC001
+      responses:
+        '200':
+          description: Cart item discarded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cartItemId:
+                    type: string
+                    format: uuid
+                  versionId:
+                    type: string
+                    format: uuid
+                  discardedAt:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '409':
+          $ref: '#/components/responses/409Conflict'
